@@ -15,7 +15,6 @@ export interface AuthUser {
   createdAt: string;
 }
 
-
 export interface AuthState {
   user: AuthUser | null;
   loading: boolean;
