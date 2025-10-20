@@ -6,6 +6,12 @@ const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
 const { getIO } = require("../socket/socket");
+const {
+  getAllCachedData,
+  getDataForDateRange,
+  fetchHistoricalData,
+  STOCKS,
+} = require("../services/stockStream");
 
 const notify = (data) => {
   const io = getIO();
@@ -248,8 +254,8 @@ router.get("/predict", async (req, res) => {
             const summary = article.summary || "No summary available";
             const date = article.time_published
               ? article.time_published
-                  .substring(0, 8)
-                  .replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3")
+                .substring(0, 8)
+                .replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3")
               : "Unknown date";
             const sentiment = article.overall_sentiment_label || "Neutral";
             const score = article.overall_sentiment_score
@@ -359,7 +365,7 @@ Return JSON format:
     try {
       // Remove markdown code blocks if present
       let cleanedMessage = aiMessage.replace(/```json\n?/g, '').replace(/```\n?/g, '');
-      
+
       // Extract JSON from the AI response (in case there's extra text)
       const jsonMatch = cleanedMessage.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
@@ -370,7 +376,7 @@ Return JSON format:
     } catch (parseError) {
       console.error("JSON parsing error:", parseError.message);
       console.log("AI Message:", aiMessage);
-      
+
       // If JSON parsing fails, return the raw response
       prediction = {
         pred_pct: null,
@@ -401,6 +407,100 @@ Return JSON format:
       success: false,
       message: "Failed to get stock prediction",
       error: error.response?.data?.error || error.message,
+    });
+  }
+});
+
+// Get historical data for stocks (initial load for charts)
+router.get("/stocks/historical", async (req, res) => {
+  try {
+    const { days = 30 } = req.query;
+    const result = {};
+
+    // Fetch historical data for all stocks
+    const promises = STOCKS.map(async (symbol) => {
+      try {
+        const data = await fetchHistoricalData(symbol, parseInt(days));
+        result[symbol] = data;
+      } catch (error) {
+        console.error(`Error fetching historical data for ${symbol}:`, error);
+        result[symbol] = [];
+      }
+    });
+
+    await Promise.all(promises);
+    res.status(200).json({
+      success: true,
+      data: result,
+      stocks: STOCKS,
+      generatedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error("Error fetching historical stock data:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch historical stock data",
+      error: error.message,
+    });
+  }
+});
+
+// Get cached real-time data for specific date range
+router.get("/stocks/range", async (req, res) => {
+  try {
+    const { symbol, startDate, endDate } = req.query;
+
+    if (!symbol || !startDate || !endDate) {
+      return res.status(400).json({
+        success: false,
+        message: "symbol, startDate, and endDate are required",
+      });
+    }
+
+    if (!STOCKS.includes(symbol.toUpperCase())) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid symbol. Allowed stocks: ${STOCKS.join(", ")}`,
+      });
+    }
+
+    const data = getDataForDateRange(symbol, startDate, endDate);
+
+    res.status(200).json({
+      success: true,
+      symbol,
+      data,
+      count: data.length,
+      startDate,
+      endDate,
+    });
+  } catch (error) {
+    console.error("Error fetching stock data for date range:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch stock data for date range",
+      error: error.message,
+    });
+  }
+});
+
+// Get all cached stocks data
+router.get("/stocks/current", async (req, res) => {
+  try {
+    const allData = getAllCachedData();
+
+    res.status(200).json({
+      success: true,
+      data: allData,
+      stocks: STOCKS,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error("Error fetching current stock data:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch current stock data",
+      error: error.message,
     });
   }
 });

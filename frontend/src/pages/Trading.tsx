@@ -8,26 +8,29 @@ import { StockCard } from '@/components/StockCard';
 import { TradingModal } from '@/components/TradingModal';
 import { Search, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
+import { mockStocks } from '@/lib/mockData';
+
+// Real stock symbols for real-time data
+const REAL_TIME_SYMBOLS = ["AAPL", "GOOGL", "MSFT", "TSLA", "AMZN", "NVDA"];
 
 export default function Trading() {
-  const { stocks, refreshPrices } = useTradingContext();
+  const { stocks } = useTradingContext();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStock, setSelectedStock] = useState<string | null>(null);
   const [tradeAction, setTradeAction] = useState<'buy' | 'sell'>('buy');
 
-  const filteredStocks = stocks.filter(stock =>
-    stock.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    stock.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter real-time symbols based on search
+  const filteredSymbols = REAL_TIME_SYMBOLS.filter(symbol => {
+    const stock = mockStocks.find(s => s.symbol === symbol);
+    return (
+      symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (stock?.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+  });
 
   const handleTrade = (symbol: string, action: 'buy' | 'sell') => {
     setSelectedStock(symbol);
     setTradeAction(action);
-  };
-
-  const handleRefresh = () => {
-    refreshPrices();
-    toast.success('Market data refreshed');
   };
 
   return (
@@ -42,10 +45,6 @@ export default function Trading() {
             Buy and sell stocks with real-time market data
           </p>
         </div>
-        <Button onClick={handleRefresh} variant="outline" size="sm">
-          <RefreshCw className="w-4 h-4 mr-2" />
-          Refresh Prices
-        </Button>
       </div>
 
       {/* Search and Filters */}
@@ -69,19 +68,19 @@ export default function Trading() {
             </div>
             <div className="flex items-center space-x-2">
               <Badge variant="secondary">
-                {filteredStocks.length} stocks
+                {filteredSymbols.length} stocks
               </Badge>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Stock Grid */}
+      {/* Stock Grid with Real-Time Data */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredStocks.map((stock) => (
+        {filteredSymbols.map((symbol) => (
           <StockCard
-            key={stock.symbol}
-            stock={stock}
+            key={symbol}
+            symbol={symbol}
             onTrade={handleTrade}
           />
         ))}
@@ -90,7 +89,7 @@ export default function Trading() {
       {/* Trading Modal */}
       {selectedStock && (
         <TradingModal
-          stock={stocks.find(s => s.symbol === selectedStock)!}
+          symbol={selectedStock}
           action={tradeAction}
           onClose={() => setSelectedStock(null)}
         />

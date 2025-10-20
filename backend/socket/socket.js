@@ -3,8 +3,10 @@ const socketio = require("socket.io");
 // const session = require("../models/session");
 // const Notification = require("../models/notification"); // Update path based on your folder structure
 const mongoose = require("mongoose");
+const { startStockStream, stopStockStream, setIOInstance } = require("../services/stockStream");
 
 let io;
+let clientCount = 0;
 
 const setupSocket = (server) => {
   io = socketio(server, {
@@ -14,6 +16,10 @@ const setupSocket = (server) => {
       credentials: true,
     },
   });
+
+  // Set the IO instance for stock streaming
+  setIOInstance(io);
+
   io.on("connection", (socket) => {
     socket.on("attachSession", async (sessionId) => {
       if (!sessionId) {
@@ -92,7 +98,7 @@ const setupSocket = (server) => {
             .populate("service");
           io.emit("new-session-started", session);
         }, 3000);
-      } catch (error) {}
+      } catch (error) { }
     });
 
     socket.on("joinUserRoom", (userId) => {
@@ -101,7 +107,33 @@ const setupSocket = (server) => {
       }
 
       socket.join(userId.toString());
-      console.log("User joined room:", userId); 
+      console.log("User joined room:", userId);
+    });
+
+    // Stock streaming events
+    socket.on("subscribeToStocks", () => {
+      socket.join("stocks");
+      clientCount++;
+      console.log("Client subscribed to stocks. Total subscribers:", clientCount);
+
+      // Start streaming only when first client subscribes
+      if (clientCount === 1) {
+        // Add a small delay to ensure IO is fully initialized
+        setTimeout(() => {
+          startStockStream();
+        }, 100);
+      }
+    });
+
+    socket.on("unsubscribeFromStocks", () => {
+      socket.leave("stocks");
+      clientCount--;
+      console.log("Client unsubscribed from stocks. Total subscribers:", clientCount);
+
+      // Stop streaming when last client unsubscribes
+      if (clientCount === 0) {
+        stopStockStream();
+      }
     });
 
     socket.on("markNotificationsAsSeen", async (userId) => {
@@ -118,7 +150,15 @@ const setupSocket = (server) => {
       } catch (error) { console.error("Error marking notifications as seen:", error); }
     });
 
-    socket.on("disconnect", () => {});
+    socket.on("disconnect", () => {
+      // Handle unsubscribe on disconnect
+      if (socket.rooms.has("stocks")) {
+        clientCount--;
+        if (clientCount === 0) {
+          stopStockStream();
+        }
+      }
+    });
   });
 
   return io;
