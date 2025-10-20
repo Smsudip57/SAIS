@@ -103,13 +103,13 @@ export const StockCard: React.FC<StockCardProps> = ({ symbol, stock, compact = f
 
   // Use real-time data if available, otherwise use mock data
   const displayData = shouldUseRealtime && currentData ? {
-    symbol: currentData.symbol,
-    name: currentData.symbol,
-    price: currentData.price,
-    change: currentData.change,
-    changePercent: currentData.changePercent,
-    volume: currentData.volume,
-    marketCap: currentData.marketCap || 'N/A',
+    symbol: currentData?.symbol,
+    name: currentData?.symbol,
+    price: currentData?.price,
+    change: currentData?.change,
+    changePercent: currentData?.changePercent,
+    volume: currentData?.volume,
+    marketCap: currentData?.marketCap ?? 'N/A',
   } : stock;
 
   if (!displayData) {
@@ -121,23 +121,23 @@ export const StockCard: React.FC<StockCardProps> = ({ symbol, stock, compact = f
       <CardContent className={compact ? "p-4" : "p-6"}>
         <div className="flex items-start justify-between mb-3">
           <div>
-            <h3 className="font-bold text-lg">{displayData.symbol}</h3>
+            <h3 className="font-bold text-lg">{displayData?.symbol ?? '-'}</h3>
             {!compact && (
               <p className="text-sm text-gray-600 dark:text-gray-400">{displayData.name}</p>
             )}
           </div>
           <div className="text-right">
             <div className="flex items-center justify-end gap-2">
-              <p className="font-bold text-lg">{formatCurrency(displayData.price)}</p>
+              <p className="font-bold text-lg">{formatCurrency(displayData?.price ?? 0)}</p>
             </div>
             <div className={`flex items-center text-sm ${displayData.change >= 0 ? 'text-green-600' : 'text-red-600'
               }`}>
-              {displayData.change >= 0 ? (
+              {displayData?.change >= 0 ? (
                 <TrendingUp className="w-3 h-3 mr-1" />
               ) : (
                 <TrendingDown className="w-3 h-3 mr-1" />
               )}
-              {displayData.change >= 0 ? '+' : ''}{formatCurrency(displayData.change)} ({displayData.changePercent >= 0 ? '+' : ''}{displayData.changePercent.toFixed(2)}%)
+              {displayData?.change >= 0 ? '+' : ''}{formatCurrency(displayData?.change ?? 0)} ({displayData?.changePercent >= 0 ? '+' : ''}{displayData?.changePercent?.toFixed(2) ?? 0}%)
             </div>
           </div>
         </div>
@@ -146,11 +146,11 @@ export const StockCard: React.FC<StockCardProps> = ({ symbol, stock, compact = f
           <div className="space-y-2 mb-4">
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Volume:</span>
-              <span>{formatVolume(displayData.volume)}</span>
+              <span>{formatVolume(displayData?.volume ?? 0)}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Market Cap:</span>
-              <span>{formatMarketCap(displayData.marketCap)}</span>
+              <span>{formatMarketCap(displayData?.marketCap)}</span>
             </div>
           </div>
         )}
@@ -172,11 +172,11 @@ export const StockCard: React.FC<StockCardProps> = ({ symbol, stock, compact = f
             <div className="text-sm space-y-1">
               <div className="flex justify-between">
                 <span className="text-gray-600">Target Price:</span>
-                <span className="font-medium">{formatCurrency((displayData as any).prediction.targetPrice)}</span>
+                <span className="font-medium">{formatCurrency((displayData as any)?.prediction?.targetPrice)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Confidence:</span>
-                <span className="font-medium">{(displayData as any).prediction.confidence}%</span>
+                <span className="font-medium">{(displayData as any)?.prediction?.confidence ?? 0}%</span>
               </div>
             </div>
 
