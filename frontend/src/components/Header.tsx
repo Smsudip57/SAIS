@@ -6,7 +6,7 @@ import { UserPopover } from "@/components/User";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "../../Redux/store";
 import { DollarSign, TrendingUp, TrendingDown } from "lucide-react";
-import { useGetAccountQuery } from "../../Redux/Api/tradingApi/Trading";
+import { useGetAccountQuery, useGetPositionsQuery } from "../../Redux/Api/tradingApi/Trading";
 import { setCurrentAccountType } from "../../Redux/tradingSlice";
 
 export const Header: React.FC = () => {
@@ -21,7 +21,11 @@ export const Header: React.FC = () => {
   );
 
   // Fetch account data from backend (once on mount)
-  const { data: accountData, isLoading } = useGetAccountQuery(undefined);
+  const { data: accountData, isLoading, refetch: refetchAccount } = useGetAccountQuery(undefined);
+  const { refetch: refetchPositions } = useGetPositionsQuery(
+    { accountType: currentAccountType },
+    { skip: !currentAccountType }
+  );
 
   // Get current account based on selected type
   const currentAccount = accounts?.[currentAccountType as keyof typeof accounts];
@@ -30,6 +34,14 @@ export const Header: React.FC = () => {
     const newAccountType = isChecked ? "demo" : "real";
     dispatch(setCurrentAccountType(newAccountType));
   };
+
+  // Refetch both account and positions when account type changes
+  useEffect(() => {
+    if (currentAccountType) {
+      refetchAccount();
+      refetchPositions();
+    }
+  }, [currentAccountType, refetchAccount, refetchPositions]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -100,8 +112,8 @@ export const Header: React.FC = () => {
                     <p className="text-xs text-gray-500">Today</p>
                     <p
                       className={`text-sm font-semibold ${(currentAccount?.dayChange ?? 0) >= 0
-                          ? "text-green-600"
-                          : "text-red-600"
+                        ? "text-green-600"
+                        : "text-red-600"
                         }`}
                     >
                       {isLoading ? (

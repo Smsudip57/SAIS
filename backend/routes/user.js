@@ -244,7 +244,6 @@ router.get("/stocks/predictions", async (req, res) => {
       })
     );
 
-    console.log("✅ Predictions Data:", result);
     res.status(200).json({
       success: true,
       data: result,
@@ -274,7 +273,7 @@ router.get("/stocks/historical", async (req, res) => {
         const data = await fetchHistoricalData(symbol, parseInt(days));
         result[symbol] = data;
       } catch (error) {
-        console.error(`Error fetching historical data for ${symbol}:`, error);
+        // console.error(`Error fetching historical data for ${symbol}:`, error);
         result[symbol] = [];
       }
     });
@@ -474,16 +473,47 @@ router.post("/buy", async (req, res) => {
 
     const finalAccountType = accountType || user.currentAccountType;
 
-    // Get current stock price
-    const stockData = await yahooFinance.quote(symbol);
-    if (!stockData) {
-      return res.status(404).json({
-        success: false,
-        message: `Stock ${symbol} not found`,
-      });
-    }
+    // Get current stock price with timeout and fallback
+    let pricePerShare;
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      const stockData = await yahooFinance.quote(symbol);
+      clearTimeout(timeout);
 
-    const pricePerShare = stockData.regularMarketPrice;
+      if (!stockData) {
+        return res.status(404).json({
+          success: false,
+          message: `Stock ${symbol} not found`,
+        });
+      }
+      pricePerShare = stockData.regularMarketPrice;
+    } catch (stockError) {
+      console.warn(`Yahoo Finance timeout for ${symbol}, using fallback...`);
+      // Try to get cached price from stockStream
+      const cachedData = getAllCachedData();
+      const cachedStock = cachedData[symbol.toUpperCase()];
+
+      if (!cachedStock || cachedStock.length === 0) {
+        return res.status(503).json({
+          success: false,
+          message: `Unable to fetch price for ${symbol}. Stock service unavailable.`,
+        });
+      }
+
+      const latestCachedData = cachedStock[cachedStock.length - 1];
+      // Real-time data has 'price' field, historical has 'close'
+      pricePerShare = latestCachedData.price || latestCachedData.close;
+
+      if (!pricePerShare) {
+        return res.status(503).json({
+          success: false,
+          message: `No price data available for ${symbol}.`,
+        });
+      }
+
+      console.log(`Using cached price for ${symbol}: $${pricePerShare}`);
+    }
     const totalAmount = shares * pricePerShare;
     const account = user.tradingAccounts[finalAccountType];
 
@@ -676,16 +706,47 @@ router.post("/sell", async (req, res) => {
       });
     }
 
-    // Get current stock price
-    const stockData = await yahooFinance.quote(symbol);
-    if (!stockData) {
-      return res.status(404).json({
-        success: false,
-        message: `Stock ${symbol} not found`,
-      });
-    }
+    // Get current stock price with timeout and fallback
+    let pricePerShare;
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      const stockData = await yahooFinance.quote(symbol);
+      clearTimeout(timeout);
 
-    const pricePerShare = stockData.regularMarketPrice;
+      if (!stockData) {
+        return res.status(404).json({
+          success: false,
+          message: `Stock ${symbol} not found`,
+        });
+      }
+      pricePerShare = stockData.regularMarketPrice;
+    } catch (stockError) {
+      console.warn(`Yahoo Finance timeout for ${symbol}, using fallback...`);
+      // Try to get cached price from stockStream
+      const cachedData = getAllCachedData();
+      const cachedStock = cachedData[symbol.toUpperCase()];
+
+      if (!cachedStock || cachedStock.length === 0) {
+        return res.status(503).json({
+          success: false,
+          message: `Unable to fetch price for ${symbol}. Stock service unavailable.`,
+        });
+      }
+
+      const latestCachedData = cachedStock[cachedStock.length - 1];
+      // Real-time data has 'price' field, historical has 'close'
+      pricePerShare = latestCachedData.price || latestCachedData.close;
+
+      if (!pricePerShare) {
+        return res.status(503).json({
+          success: false,
+          message: `No price data available for ${symbol}.`,
+        });
+      }
+
+      console.log(`Using cached price for ${symbol}: $${pricePerShare}`);
+    }
     const totalAmount = shares * pricePerShare;
     const account = user.tradingAccounts[finalAccountType];
 

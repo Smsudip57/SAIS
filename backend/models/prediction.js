@@ -47,12 +47,6 @@ const predictionSchema = new mongoose.Schema(
             default: Date.now,
             index: true,
         },
-        expiresAt: {
-            type: Date,
-            default: () => new Date(Date.now() + 3 * 60 * 60 * 1000), // 3 hours from now
-            index: true,
-            // Removed TTL expires to keep stale data for background refresh process
-        },
     },
     {
         timestamps: true,

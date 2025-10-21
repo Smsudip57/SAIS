@@ -1,7 +1,7 @@
 const dotenv = require("dotenv");
 dotenv.config();
 const express = require("express");
-const dbConnect = require("./dbConnect/dbConnect"); // Import the database connection
+const dbConnect = require("./dbConnect/dbConnect"); 
 const auth = require("./routes/auth");
 const user = require("./routes/user");
 const admin = require("./routes/admin");
@@ -11,11 +11,11 @@ const cors = require("cors");
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-const http = require("http"); // Required to integrate Socket.IO
-const { Server } = require("socket.io"); // Import the Socket.IO server
+const http = require("http"); 
+const { Server } = require("socket.io");
 const { setupSocket, getIO } = require("./socket/socket");
 
-const server = http.createServer(app); // Create the HTTP server for Express and Socket.IO
+const server = http.createServer(app); 
 const io = setupSocket(server);
 
 // Connect to MongoDB
@@ -23,8 +23,7 @@ app.use(
   cors({
     origin: [
       "http://localhost:5173",
-      process.env.Client_Url,
-      "https://netbay.in",
+      process.env.Client_Url
     ],
     credentials: true,
   })
@@ -48,12 +47,8 @@ app.use(
 app.use(express.json());
 
 app.use("/api", auth);
-// app.use('/api/chat', chat);
-// Protect /api/user routes with userAuth middleware so req.user is available
 app.use("/api/user", userAuth, user);
-// Admin routes remain protected by adminAuth
 app.use("/api/admin", adminAuth, admin);
-// app.use('/api/payment', payment);
 
 app.use((req, res, next) => {
   console.log(`Path hit: ${req.originalUrl}`);

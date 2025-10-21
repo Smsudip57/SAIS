@@ -1,5 +1,5 @@
 {
-  "name": "netbay_server",
+  "name": "sais_server",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {

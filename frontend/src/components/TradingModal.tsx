@@ -7,8 +7,9 @@ import { TrendingUp, TrendingDown, Loader } from 'lucide-react';
 import { toast } from 'sonner';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import { format } from 'date-fns';
-import { useTradingContext } from '@/contexts/TradingContext';
 import { useSharedStockStream } from '@/hooks/useSharedStockStream';
+import { useBuyStockMutation, useSellStockMutation, useGetAccountQuery, useGetPositionsQuery } from '../../Redux/Api/tradingApi/Trading';
+import { useSelector } from 'react-redux';
 
 interface DailyPriceData {
   date: string;
@@ -155,12 +156,29 @@ const OneDayChart = ({ data, isPositive }: { data: DailyPriceData[]; isPositive:
 };
 
 export const TradingModal: React.FC<TradingModalProps> = ({ symbol, action, onClose }) => {
-  const { buyStock, sellStock, currentAccount, isDemo } = useTradingContext();
   const { stockData } = useSharedStockStream(symbol);
   const [shares, setShares] = useState<number>(1);
 
-  const stock = stockData;
-  const currentPrice = stock?.currentData?.price || stock?.historicalData?.[stock.historicalData.length - 1]?.close || 0;
+  // Redux state
+  const currentAccountType = useSelector((state: any) => state.trading.currentAccountType);
+  const isDemo = currentAccountType === 'demo';
+
+  // API hooks
+  const [buyStock, { isLoading: isBuyLoading }] = useBuyStockMutation();
+  const [sellStock, { isLoading: isSellLoading }] = useSellStockMutation();
+  const { data: accountData } = useGetAccountQuery();
+  const { data: positionsData } = useGetPositionsQuery({ accountType: currentAccountType });
+
+  // Get real-time price from stream context
+  const currentPrice = stockData?.currentData?.price || stockData?.historicalData?.[stockData.historicalData?.length - 1]?.close || 0;
+
+  // Get account data from API
+  const account = isDemo ? accountData?.accounts?.demo : accountData?.accounts?.real;
+  const balance = account?.balance || 0;
+
+  // Get positions from positions API (not from account)
+  const positions = positionsData?.positions || [];
+  const currentPosition = positions?.find((p: any) => p.symbol === symbol);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -171,42 +189,42 @@ export const TradingModal: React.FC<TradingModalProps> = ({ symbol, action, onCl
 
   // Prepare 1-day chart data from historical data
   const dailyChartData = useMemo(() => {
-    if (!stock?.historicalData || stock.historicalData.length === 0) return [];
-    return prepareDailyChartData(stock.historicalData);
-  }, [stock?.historicalData]);
+    if (!stockData?.historicalData || stockData.historicalData.length === 0) return [];
+    return prepareDailyChartData(stockData.historicalData);
+  }, [stockData?.historicalData]);
 
   const totalCost = shares * currentPrice;
-  const canAfford = currentAccount.balance >= totalCost;
-
-  const currentPosition = currentAccount.positions.find(p => p.symbol === symbol);
+  const canAfford = balance >= totalCost;
   const canSell = currentPosition && currentPosition.shares >= shares;
 
-  const handleTrade = () => {
-    let success = false;
+  const handleTrade = async () => {
+    try {
+      if (action === 'buy') {
+        const result = await buyStock({
+          symbol,
+          shares,
+          accountType: currentAccountType,
+        }).unwrap();
 
-    if (action === 'buy') {
-      success = buyStock(symbol, shares);
-      if (success) {
         toast.success(`Successfully bought ${shares} shares of ${symbol}`);
+        onClose();
       } else {
-        toast.error('Insufficient funds for this purchase');
-      }
-    } else {
-      success = sellStock(symbol, shares);
-      if (success) {
-        toast.success(`Successfully sold ${shares} shares of ${symbol}`);
-      } else {
-        toast.error('Insufficient shares to sell');
-      }
-    }
+        const result = await sellStock({
+          symbol,
+          shares,
+          accountType: currentAccountType,
+        }).unwrap();
 
-    if (success) {
-      onClose();
+        toast.success(`Successfully sold ${shares} shares of ${symbol}`);
+        onClose();
+      }
+    } catch (error: any) {
+      toast.error(`❌ ${error?.data?.message || 'Trade failed'}`);
     }
   };
 
   const maxShares = action === 'buy'
-    ? Math.floor(currentAccount.balance / currentPrice)
+    ? Math.floor(balance / currentPrice)
     : currentPosition?.shares || 0;
 
   // Calculate price change from historical data (first to last day)
@@ -216,7 +234,7 @@ export const TradingModal: React.FC<TradingModalProps> = ({ symbol, action, onCl
   const priceChangePercent = firstPrice > 0 ? ((priceChange / firstPrice) * 100) : 0;
   const isPositive = priceChange >= 0;
 
-  if (stock?.isLoading) {
+  if (stockData?.isLoading) {
     return (
       <Dialog open onOpenChange={onClose}>
         <DialogContent className="w-full max-w-4xl">
@@ -293,7 +311,7 @@ export const TradingModal: React.FC<TradingModalProps> = ({ symbol, action, onCl
               </div>
               <div>
                 <p className="text-xs text-slate-600 dark:text-slate-400">Balance</p>
-                <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{formatCurrency(currentAccount.balance)}</p>
+                <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{formatCurrency(balance)}</p>
               </div>
               <div>
                 <p className="text-xs text-slate-600 dark:text-slate-400">Position</p>
@@ -345,20 +363,30 @@ export const TradingModal: React.FC<TradingModalProps> = ({ symbol, action, onCl
                     (action === 'buy' && !canAfford) ||
                     (action === 'sell' && !canSell) ||
                     shares <= 0 ||
-                    currentPrice === 0
+                    currentPrice === 0 ||
+                    isBuyLoading ||
+                    isSellLoading
                   }
                   className={`h-8 text-xs font-semibold px-5 text-white ${action === 'buy'
                     ? 'bg-green-600 hover:bg-green-700 disabled:bg-green-400 dark:bg-green-700 dark:hover:bg-green-600'
                     : 'bg-red-600 hover:bg-red-700 disabled:bg-red-400 dark:bg-red-700 dark:hover:bg-red-600'
                     }`}
                 >
-                  {action === 'buy' ? 'Buy' : 'Sell'}
+                  {isBuyLoading || isSellLoading ? (
+                    <>
+                      <Loader className="w-3 h-3 mr-1 animate-spin inline" />
+                      {action === 'buy' ? 'Buying...' : 'Selling...'}
+                    </>
+                  ) : (
+                    action === 'buy' ? 'Buy' : 'Sell'
+                  )}
                 </Button>
 
                 <Button
                   variant="outline"
                   onClick={onClose}
                   className="h-8 px-3 text-xs font-semibold"
+                  disabled={isBuyLoading || isSellLoading}
                 >
                   Cancel
                 </Button>
@@ -370,7 +398,7 @@ export const TradingModal: React.FC<TradingModalProps> = ({ symbol, action, onCl
           <div className="space-y-2">
             {action === 'buy' && !canAfford && (
               <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/30 p-2.5 rounded text-xs text-red-800 dark:text-red-300">
-                ⚠️ Need {formatCurrency(totalCost - currentAccount.balance)} more funds
+                ⚠️ Need {formatCurrency(totalCost - balance)} more funds
               </div>
             )}
 

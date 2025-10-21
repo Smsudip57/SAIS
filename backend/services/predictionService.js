@@ -1,37 +1,29 @@
 const yahooFinance = require("yahoo-finance2").default;
 const axios = require("axios");
 const Prediction = require("../models/prediction");
+const log = require("../helper/logger");
 
-/**
- * Background job to refresh prediction without blocking user
- * This runs independently and updates DB silently
- */
+
 async function refreshPredictionBackground(symbol) {
     try {
-        console.log(`🔄 [BG] Starting background refresh for ${symbol}...`);
+        log.log(`🔄 [BG] Starting background refresh for ${symbol}...`);
         await generateNewPrediction(symbol);
-        console.log(`✅ [BG] Background refresh completed for ${symbol}`);
+        log.log(`✅ [BG] Background refresh completed for ${symbol}`);
     } catch (error) {
-        console.error(`❌ [BG] Background refresh failed for ${symbol}:`, error.message);
-        // Don't throw - background job failures shouldn't affect anything
+        log.error(`❌ [BG] Background refresh failed for ${symbol}:`, error.message);
     }
 }
 
-/**
- * Generate new prediction and save to DB
- * Used by both direct calls and background refresh
- */
+
 async function generateNewPrediction(symbol) {
     const upperSymbol = symbol.toUpperCase();
 
-    // Fetch current stock data from Yahoo Finance
     const stockData = await yahooFinance.quote(upperSymbol);
 
     if (!stockData) {
         throw new Error(`Stock ${upperSymbol} not found`);
     }
 
-    // Get historical data for the last 30 days
     const endDate = new Date();
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - 30);
@@ -44,10 +36,9 @@ async function generateNewPrediction(symbol) {
             interval: "1d",
         });
     } catch (histError) {
-        console.warn("Historical data fetch failed:", histError.message);
+        log.warn("Historical data fetch failed:", histError.message);
     }
 
-    // Create historical summary
     let historicalSummary = "Historical data not available";
     if (historicalData && historicalData.length > 0) {
         const prices = historicalData.map((d) => d.close);
@@ -59,27 +50,25 @@ async function generateNewPrediction(symbol) {
         historicalSummary = `Average price: $${avgPrice}, Price range: $${priceRange}, Average volume: ${avgVolume.toLocaleString()}`;
     }
 
-    // Extract key data
     const ticker = stockData.symbol;
     const currentPrice = stockData.regularMarketPrice;
     const recentChange = stockData.regularMarketChangePercent;
 
-    // Fetch real news using Alpha Vantage News Sentiment API
     let newsSection = "No recent news available";
 
     try {
-        console.log(`📰 Fetching news for ${ticker}...`);
+        log.log(`📰 Fetching news for ${ticker}...`);
         const avApiKey = process.env.AV_Key;
 
         if (!avApiKey) {
-            console.warn("AV_Key environment variable not set");
+            log.warn("AV_Key environment variable not set");
         } else {
             const newsResponse = await axios.get(
                 `https://www.alphavantage.co/query?function=NEWS_SENTIMENT&tickers=${ticker}&apikey=${avApiKey}`,
                 {
                     timeout: 15000,
                     headers: {
-                        "User-Agent": "NetBay-Stock-Predictor/1.0",
+                        "User-Agent": "SAIS-Stock-Predictor/1.0",
                     },
                 }
             );
@@ -110,14 +99,14 @@ async function generateNewPrediction(symbol) {
                     })
                     .join(" ");
 
-                console.log(`✅ Fetched ${recentNews.length} news articles for ${ticker}`);
+                log.log(`✅ Fetched ${recentNews.length} news articles for ${ticker}`);
             } else if (newsResponse.data && newsResponse.data.Information) {
-                console.warn("Alpha Vantage API limit:", newsResponse.data.Information);
+                log.warn("Alpha Vantage API limit:", newsResponse.data.Information);
                 newsSection = `API rate limit reached for ${ticker}. Analysis will focus on technical indicators.`;
             }
         }
     } catch (newsError) {
-        console.error("Error fetching news from Alpha Vantage:", newsError.message);
+        log.error("Error fetching news from Alpha Vantage:", newsError.message);
         if (newsError.response?.status === 429) {
             newsSection = `API rate limit exceeded for ${ticker}. Analysis based on price data only.`;
         } else {
@@ -152,14 +141,13 @@ Return JSON format:
   ]
 }`;
 
-    // OpenRouter API configuration
     const openRouterApiKey = process.env.OpenRouter_Key?.replace(/"/g, "");
 
     if (!openRouterApiKey) {
         throw new Error("OpenRouter_Key environment variable not set");
     }
 
-    console.log("🤖 Calling AI model for prediction...");
+    log.log("🤖 Calling AI model for prediction...");
 
     const response = await axios.post(
         "https://openrouter.ai/api/v1/chat/completions",
@@ -179,7 +167,7 @@ Return JSON format:
                 Authorization: `Bearer ${openRouterApiKey}`,
                 "Content-Type": "application/json",
                 "HTTP-Referer": process.env.Current_Url || "http://localhost:3001",
-                "X-Title": "NetBay AI Assistant",
+                "X-Title": "SAIS AI Assistant",
             },
         }
     );
@@ -205,7 +193,7 @@ Return JSON format:
             throw new Error("No valid JSON found in response");
         }
     } catch (parseError) {
-        console.error("JSON parsing error:", parseError.message);
+        log.error("JSON parsing error:", parseError.message);
         prediction = {
             pred_pct: null,
             confidence: null,
@@ -214,26 +202,24 @@ Return JSON format:
         };
     }
 
-    // Update or create prediction (replace old with new)
     const predictionDoc = await Prediction.findOneAndUpdate(
-        { symbol: upperSymbol }, // Find by symbol
+        { symbol: upperSymbol },
         {
-            // Replace with new data
             symbol: upperSymbol,
             currentPrice,
             recentChange,
             prediction,
             model: "deepseek/deepseek-r1",
-            timestamp: new Date(), // Update timestamp
+            timestamp: new Date(),
         },
         {
-            upsert: true, // Create if doesn't exist
-            new: true, // Return updated document
+            upsert: true,
+            new: true,
             runValidators: true,
         }
     );
 
-    console.log(`💾 Saved/Updated prediction for ${upperSymbol} to database`);
+    log.log(`💾 Saved/Updated prediction for ${upperSymbol} to database`);
 
     return {
         _id: predictionDoc._id,
@@ -246,72 +232,53 @@ Return JSON format:
     };
 }
 
-/**
- * Get or create a prediction for a stock with sequential refresh delay
- * NEW BEHAVIOR:
- * - If cache exists (< 3 hours): Return it immediately
- * - If cache expired (> 3 hours): Return stale data + refresh in background (with index-based delay)
- * - If no cache: Generate new prediction (user waits first time only)
- * 
- * @param {string} symbol - Stock symbol
- * @param {number} index - Index in the stocks array (0-based) for sequential refresh
- * @returns {object} Prediction data with cache info
- */
+
 async function getOrCreatePrediction(symbol, index = 0) {
     try {
-        // Convert to uppercase for consistency
         const upperSymbol = symbol.toUpperCase();
 
-        // Check for existing prediction (any age)
         const latestPrediction = await Prediction.findOne({
             symbol: upperSymbol,
         })
             .sort({ createdAt: -1 })
             .lean();
 
-        // Calculate age of prediction
         const now = new Date();
-        const threeHoursAgo = new Date(now - 3 * 60 * 60 * 1000);
-        const isExpired = latestPrediction && latestPrediction.createdAt < threeHoursAgo;
-
-        // CASE 1: Fresh cache (< 3 hours old) - Return immediately
+        const sixHoursAgo = new Date(now - 6 * 60 * 60 * 1000);
+        const isExpired = latestPrediction && latestPrediction.updatedAt < sixHoursAgo;
         if (latestPrediction && !isExpired) {
-            console.log(`✅ Using cached prediction for ${upperSymbol}`);
+            log.log(`✅ Using cached prediction for ${upperSymbol}`);
             return {
                 fromCache: true,
                 isFresh: true,
-                cachedAt: latestPrediction.createdAt,
+                cachedAt: latestPrediction.updatedAt,
                 ...latestPrediction,
             };
         }
 
-        // CASE 2: Stale cache (> 3 hours old) - Return stale + refresh background
         if (latestPrediction && isExpired) {
-            console.log(`⏰ Cache expired for ${upperSymbol}, returning stale data + refreshing background (index: ${index})`);
+            log.log(`⏰ Cache expired for ${upperSymbol}, returning stale data + refreshing background (index: ${index})`);
 
-            // Calculate delay: index * 3 minutes to spread API calls
-            const delayMs = index * 10 * 60 * 1000; // Convert to milliseconds
+            const delayMs = index * 10 * 60 * 1000;
 
-            // Trigger background refresh with delay (don't await, don't block)
             setTimeout(() => {
                 refreshPredictionBackground(upperSymbol);
             }, delayMs);
 
-            console.log(`🕐 Background refresh for ${upperSymbol} scheduled in ${delayMs / 60000} minutes`);
+            log.log(`🕐 Background refresh for ${upperSymbol} scheduled in ${delayMs / 60000} minutes`);
 
             return {
                 fromCache: true,
                 isFresh: false,
                 isStale: true,
-                staleSince: latestPrediction.createdAt,
+                staleSince: latestPrediction.updatedAt,
                 message: `Returning cached data while refreshing in background (scheduled in ${delayMs / 60000} minutes)...`,
                 scheduledRefreshIn: `${delayMs / 60000} minutes`,
                 ...latestPrediction,
             };
         }
 
-        // CASE 3: No cache exists - Generate new (user waits, but only first time)
-        console.log(`🆕 No prediction found for ${upperSymbol}, generating new...`);
+        log.log(`🆕 No prediction found for ${upperSymbol}, generating new...`);
         const newPrediction = await generateNewPrediction(upperSymbol);
 
         return {
@@ -322,7 +289,7 @@ async function getOrCreatePrediction(symbol, index = 0) {
             ...newPrediction,
         };
     } catch (error) {
-        console.error(`❌ Error in getOrCreatePrediction for ${symbol}:`, error.message);
+        log.error(`❌ Error in getOrCreatePrediction for ${symbol}:`, error.message);
         throw error;
     }
 }

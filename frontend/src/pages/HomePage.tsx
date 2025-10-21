@@ -60,6 +60,7 @@ type RegisterForm = z.infer<typeof registerSchema>;
 
 export default function HomePage() {
   const navigate = useNavigate();
+  const [logoError, setLogoError] = useState(false);
   const {
     register,
     handleSubmit,
@@ -128,9 +129,13 @@ export default function HomePage() {
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-white" />
-              </div>
+              <img
+                src="/android-chrome-512x512.png"
+                alt="SAIS Logo"
+                className="w-8 h-8 rounded-md"
+                onError={() => setLogoError(true)}
+              />
+
               <h1 className="text-xl font-bold text-gray-900 dark:text-white">
                 SAIS Project
               </h1>
@@ -360,9 +365,14 @@ export default function HomePage() {
             <Card className="relative bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border border-white/20 dark:border-gray-700/30 shadow-2xl rounded-3xl overflow-hidden flex ">
               {/* Header section with gradient */}
               <div className="bg-gradient-to-r from-blue-600  to-indigo-600 p-8 text-center flex flex-col items-center justify-center w-1/2">
-                <div className="w-16 h-16 mx-auto mb-4 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
-                  <TrendingUp className="w-8 h-8 text-white" />
-                </div>
+                {/* <div className="w-16 h-16 mx-auto mb-4 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center"> */}
+                  <img
+                    src="/android-chrome-512x512.png"
+                    alt="SAIS Logo"
+                    className="w-14 h-14 rounded-md"
+                    onError={() => setLogoError(true)}
+                  />
+                {/* </div> */}
                 <h3 className="text-2xl font-bold text-white mb-2">
                   Join the Revolution
                 </h3>
@@ -525,11 +535,11 @@ export default function HomePage() {
                       <div className="pt-2">
                         <p className="text-xs text-red-500 text-center">
                           {typeof error === "object" &&
-                          error &&
-                          "data" in error &&
-                          error.data &&
-                          typeof error.data === "object" &&
-                          "message" in error.data
+                            error &&
+                            "data" in error &&
+                            error.data &&
+                            typeof error.data === "object" &&
+                            "message" in error.data
                             ? (error.data as any).message
                             : "Registration failed. Please try again."}
                         </p>
@@ -574,9 +584,8 @@ export default function HomePage() {
                   ${item.price}
                 </span>
                 <span
-                  className={`flex items-center text-sm ${
-                    item.down ? "text-red-500" : "text-green-500"
-                  }`}
+                  className={`flex items-center text-sm ${item.down ? "text-red-500" : "text-green-500"
+                    }`}
                 >
                   {item.down ? (
                     <TrendingDown className="w-3 h-3 mr-1" />

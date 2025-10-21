@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Stock } from '@/lib/mockData';
 import { TrendingUp, TrendingDown, Brain, ChevronDown, ChevronUp, Info, Loader } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useSharedStockStream } from '@/hooks/useSharedStockStream';
 import { useGetStocksPredictionsQuery } from '../../Redux/Api/tradingApi/Trading';
 
@@ -106,11 +107,42 @@ export const StockCard: React.FC<StockCardProps> = ({ symbol, stock, compact = f
     return (
       <Card className="hover:shadow-md transition-shadow">
         <CardContent className={compact ? "p-4" : "p-6"}>
-          <div className="flex items-center justify-center h-40">
-            <div className="text-center space-y-2">
-              <Loader className="w-6 h-6 animate-spin mx-auto text-blue-500" />
-              <p className="text-sm text-gray-600">Loading {symbol} data...</p>
+          <div className="space-y-3">
+            {/* Header skeleton */}
+            <div className="flex items-start justify-between mb-3">
+              <div className="space-y-2 flex-1">
+                <Skeleton className="h-6 w-20" />
+                {!compact && <Skeleton className="h-4 w-32" />}
+              </div>
+              <div className="text-right space-y-2">
+                <Skeleton className="h-6 w-24 ml-auto" />
+                <Skeleton className="h-4 w-28 ml-auto" />
+              </div>
             </div>
+
+            {/* Content skeleton */}
+            {!compact && (
+              <>
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+              </>
+            )}
+
+            {/* Prediction section skeleton */}
+            <div className="space-y-2 mt-4 pt-4 border-t">
+              <Skeleton className="h-4 w-40" />
+              <Skeleton className="h-6 w-32" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-3/4" />
+            </div>
+
+            {/* Buttons skeleton */}
+            {onTrade && !compact && (
+              <div className="flex space-x-2 mt-4">
+                <Skeleton className="flex-1 h-9" />
+                <Skeleton className="flex-1 h-9" />
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -185,7 +217,7 @@ export const StockCard: React.FC<StockCardProps> = ({ symbol, stock, compact = f
           </div>
         )}
 
-        {/* {predictionData && (
+        {predictionData && (
           <div className="mb-4">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center space-x-1">
@@ -194,11 +226,11 @@ export const StockCard: React.FC<StockCardProps> = ({ symbol, stock, compact = f
               </div>
               {predictionLoading ? (
                 <Loader className="w-4 h-4 animate-spin text-purple-600" />
-              ) : predictionData?.prediction ? (
-                <Badge variant="outline" className={getPredictionDirection(predictionData.prediction)}>
+              ) : predictionData?.prediction?.pred_pct ? (
+                <Badge variant="outline" className={predictionData?.prediction?.pred_pct >= 0 ? 'text-green-600' : 'text-red-600'}>
                   <div className="flex items-center space-x-1">
-                    {getPredictionIcon(predictionData.prediction)}
-                    <span className="capitalize">{predictionData.prediction}</span>
+                    {predictionData?.prediction?.pred_pct >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                    <span className="capitalize">{predictionData?.prediction?.pred_pct >= 0 ? 'Up' : 'Down'} {Math.abs(predictionData?.prediction?.pred_pct ?? 0).toFixed(2)}%</span>
                   </div>
                 </Badge>
               ) : null}
@@ -207,34 +239,42 @@ export const StockCard: React.FC<StockCardProps> = ({ symbol, stock, compact = f
               {predictionData?.currentPrice && (
                 <div className="flex justify-between">
                   <span className="text-gray-600">Current Price:</span>
-                  <span className="font-medium">{formatCurrency(predictionData.currentPrice)}</span>
+                  <span className="font-medium">{formatCurrency(predictionData?.currentPrice ?? 0)}</span>
                 </div>
               )}
-              {predictionData?.prediction && (
+              {predictionData?.prediction?.pred_pct && (
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Prediction Direction:</span>
-                  <span className="font-medium capitalize">{predictionData.prediction}</span>
+                  <span className="text-gray-600">Predicted Change:</span>
+                  <span className={`font-medium ${predictionData?.prediction?.pred_pct >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {predictionData?.prediction?.pred_pct >= 0 ? '+' : ''}{predictionData?.prediction?.pred_pct?.toFixed(2)}%
+                  </span>
+                </div>
+              )}
+              {predictionData?.prediction?.confidence && (
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Confidence:</span>
+                  <span className="font-medium">{Math.round((predictionData?.prediction?.confidence ?? 0) * 100)}%</span>
                 </div>
               )}
               {predictionData?.recentChange && (
                 <div className="flex justify-between">
                   <span className="text-gray-600">Recent Change:</span>
-                  <span className={`font-medium ${predictionData.recentChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {predictionData.recentChange >= 0 ? '+' : ''}{predictionData.recentChange.toFixed(2)}%
+                  <span className={`font-medium ${predictionData?.recentChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {predictionData?.recentChange >= 0 ? '+' : ''}{predictionData?.recentChange?.toFixed(2)}%
                   </span>
                 </div>
               )}
               {predictionData?.fromCache !== undefined && (
                 <div className="flex justify-between text-xs">
                   <span className="text-gray-500">Cache Status:</span>
-                  <span className={`font-medium ${predictionData.fromCache ? 'text-blue-600' : 'text-green-600'}`}>
-                    {predictionData.isFresh ? '🟢 Fresh' : predictionData.isStale ? '🟡 Stale (Refreshing)' : '⚪ New'}
+                  <span className={`font-medium ${predictionData?.fromCache ? 'text-blue-600' : 'text-green-600'}`}>
+                    {predictionData?.isFresh ? '🟢 Fresh' : predictionData?.isStale ? '🟡 Stale (Refreshing)' : '⚪ New'}
                   </span>
                 </div>
               )}
             </div>
 
-            {!compact && predictionData?.prediction?.reasoning && (
+            {!compact && predictionData?.prediction?.rationale && (
               <Collapsible open={showReasoning} onOpenChange={setShowReasoning}>
                 <CollapsibleTrigger asChild>
                   <Button variant="ghost" size="sm" className="w-full mt-2 p-0 h-auto text-xs">
@@ -249,14 +289,24 @@ export const StockCard: React.FC<StockCardProps> = ({ symbol, stock, compact = f
                   <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg text-xs space-y-2">
                     <div>
                       <p className="font-medium text-gray-900 dark:text-white mb-1">AI Analysis:</p>
-                      <p className="text-gray-700 dark:text-gray-300">{predictionData.prediction?.reasoning || 'No reasoning available'}</p>
+                      <p className="text-gray-700 dark:text-gray-300">{predictionData?.prediction?.rationale || 'No reasoning available'}</p>
                     </div>
+                    {/* {predictionData?.prediction?.evidence && Array.isArray(predictionData?.prediction?.evidence) && (
+                      <div>
+                        <p className="font-medium text-gray-900 dark:text-white mb-1">Key Evidence:</p>
+                        <ul className="list-disc list-inside space-y-1 text-gray-700 dark:text-gray-300">
+                          {predictionData?.prediction?.evidence?.map((item: any, idx: number) => (
+                            <li key={idx}>{item?.text || item?.signal || item?.type || 'Evidence point'}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )} */}
                   </div>
                 </CollapsibleContent>
               </Collapsible>
             )}
           </div>
-        )} */}
+        )}
 
         {onTrade && !compact && (
           <div className="flex space-x-2">
