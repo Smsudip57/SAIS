@@ -72,7 +72,7 @@ export default function Login() {
               <TrendingUp className="w-7 h-7 text-white" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">StockTrader Pro</CardTitle>
+          <CardTitle className="text-2xl font-bold">SAIS</CardTitle>
           <CardDescription>Sign in to your trading account</CardDescription>
         </CardHeader>
         <CardContent>

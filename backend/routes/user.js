@@ -12,6 +12,13 @@ const {
   fetchHistoricalData,
   STOCKS,
 } = require("../services/stockStream");
+const { getOrCreatePrediction } = require("../services/predictionService");
+
+// Import models
+const User = require("../models/user");
+const Position = require("../models/position");
+const Transaction = require("../models/transaction");
+const PortfolioHistory = require("../models/portfolioHistory");
 
 const notify = (data) => {
   const io = getIO();
@@ -162,6 +169,7 @@ router.get("/bulk", async (req, res) => {
   }
 });
 
+// Get single stock prediction
 router.get("/predict", async (req, res) => {
   try {
     const { stock } = req.query;
@@ -173,240 +181,82 @@ router.get("/predict", async (req, res) => {
       });
     }
 
-    // Fetch current stock data from Yahoo Finance
-    const stockData = await yahooFinance.quote(stock);
-
-    if (!stockData) {
-      return res.status(404).json({
-        success: false,
-        message: "Stock data not found",
-      });
-    }
-
-    // Get historical data for the last 30 days
-    const endDate = new Date();
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - 30);
-
-    let historicalData;
-    try {
-      historicalData = await yahooFinance.historical(stock, {
-        period1: startDate,
-        period2: endDate,
-        interval: "1d",
-      });
-    } catch (histError) {
-      console.warn("Historical data fetch failed:", histError.message);
-      historicalData = [];
-    }
-
-    // Create historical summary
-    let historicalSummary = "Historical data not available";
-    if (historicalData && historicalData.length > 0) {
-      const prices = historicalData.map((d) => d.close);
-      const volumes = historicalData.map((d) => d.volume);
-      const avgPrice = (
-        prices.reduce((a, b) => a + b, 0) / prices.length
-      ).toFixed(2);
-      const avgVolume = Math.round(
-        volumes.reduce((a, b) => a + b, 0) / volumes.length
-      );
-      const priceRange = `${Math.min(...prices).toFixed(2)} - ${Math.max(
-        ...prices
-      ).toFixed(2)}`;
-
-      historicalSummary = `Average price: $${avgPrice}, Price range: $${priceRange}, Average volume: ${avgVolume.toLocaleString()}`;
-    }
-
-    // Extract key data
-    const ticker = stockData.symbol;
-    const currentPrice = stockData.regularMarketPrice;
-    const recentChange = stockData.regularMarketChangePercent;
-
-    // Fetch real news using Alpha Vantage News Sentiment API
-    let newsSection = "No recent news available";
-
-    try {
-      console.log(`Fetching news for ${ticker} using Alpha Vantage...`);
-      const avApiKey = process.env.AV_Key;
-
-      const newsResponse = await axios.get(
-        `https://www.alphavantage.co/query?function=NEWS_SENTIMENT&tickers=${ticker}&apikey=${avApiKey}`,
-        {
-          timeout: 15000,
-          headers: {
-            "User-Agent": "NetBay-Stock-Predictor/1.0",
-          },
-        }
-      );
-
-      if (
-        newsResponse.data &&
-        newsResponse.data.feed &&
-        newsResponse.data.feed.length > 0
-      ) {
-        // Take the most recent 10 news articles
-        const recentNews = newsResponse.data.feed.slice(0, 10);
-
-        newsSection = recentNews
-          .map((article) => {
-            const title = article.title || "No title";
-            const summary = article.summary || "No summary available";
-            const date = article.time_published
-              ? article.time_published
-                .substring(0, 8)
-                .replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3")
-              : "Unknown date";
-            const sentiment = article.overall_sentiment_label || "Neutral";
-            const score = article.overall_sentiment_score
-              ? `(${(article.overall_sentiment_score * 100).toFixed(1)}%)`
-              : "";
-            const url = article.url || "";
-
-            return `[${date}] ${sentiment}${score} ${title}: ${summary.substring(
-              0,
-              150
-            )}... SOURCE: ${url}`;
-          })
-          .join(" ");
-
-        console.log(
-          `Successfully fetched ${recentNews.length} news articles for ${ticker}`
-        );
-      } else if (newsResponse.data && newsResponse.data.Information) {
-        console.warn("Alpha Vantage API limit:", newsResponse.data.Information);
-        newsSection = `API rate limit reached for ${ticker}. Analysis will focus on technical indicators.`;
-      } else {
-        newsSection = `No recent news found for ${ticker}`;
-        console.log(`No news articles found for ${ticker}`);
-      }
-    } catch (newsError) {
-      console.error(
-        "Error fetching news from Alpha Vantage:",
-        newsError.message
-      );
-      if (newsError.response?.status === 429) {
-        newsSection = `API rate limit exceeded for ${ticker}. Analysis based on price data only.`;
-      } else {
-        newsSection = `Unable to fetch recent news for ${ticker}. Using historical context only.`;
-      }
-    }
-    // return res.json({ success: true, message: "News fetched", news: newsSection });
-
-    console.log("News Section:", newsSection);
-    // Create the AI prompt
-    const prompt = `You are a financial analyst. Ticker: ${ticker}
-Current price: ${currentPrice}, recent % change: ${recentChange}
-Historical summary (last 30 days):
-${historicalSummary}
-
-Recent news (each news item includes SOURCE: [url] at the end):
-${newsSection}
-
-Task:
-1. Predict next-day stock movement in percent (pred_pct)
-2. Provide confidence (0-1)
-3. Give detailed rationale citing historical trends and news (if any)
-4. Provide evidence as array of objects with "detail" and "source_link" properties
-
-Return JSON format:
-{
-  "pred_pct": number,
-  "confidence": number,
-  "rationale": "detailed explanation",
-  "evidence": [
-    {"detail": "specific evidence point", "source_link": "news article url or 'Technical Analysis'"},
-    {"detail": "another evidence point", "source_link": "news article url or 'Historical Data'"},
-    {"detail": "third evidence point", "source_link": "news article url or 'Market Sentiment'"}
-  ]
-}`;
-
-    // OpenRouter API configuration
-    const openRouterApiKey = process.env.OpenRouter_Key.replace(/"/g, ""); // Remove quotes from env variable
-
-    const response = await axios.post(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        model: "deepseek/deepseek-r1",
-        messages: [
-          {
-            role: "user",
-            content: prompt,
-          },
-        ],
-        max_tokens: 1000,
-        temperature: 0.2, // Lower temperature for more consistent financial analysis
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${openRouterApiKey}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": process.env.Current_Url || "http://localhost:3001",
-          "X-Title": "NetBay AI Assistant",
-        },
-      }
-    );
-
-    if (
-      !response.data ||
-      !response.data.choices ||
-      response.data.choices.length === 0
-    ) {
-      return res.status(500).json({
-        success: false,
-        message: "No response from AI model",
-      });
-    }
-
-    const aiMessage = response.data.choices[0].message.content;
-
-    // Try to parse the JSON response from AI
-    let prediction;
-    try {
-      // Remove markdown code blocks if present
-      let cleanedMessage = aiMessage.replace(/```json\n?/g, '').replace(/```\n?/g, '');
-
-      // Extract JSON from the AI response (in case there's extra text)
-      const jsonMatch = cleanedMessage.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        prediction = JSON.parse(jsonMatch[0]);
-      } else {
-        throw new Error("No valid JSON found in response");
-      }
-    } catch (parseError) {
-      console.error("JSON parsing error:", parseError.message);
-      console.log("AI Message:", aiMessage);
-
-      // If JSON parsing fails, return the raw response
-      prediction = {
-        pred_pct: null,
-        confidence: null,
-        rationale: aiMessage,
-        evidence: ["AI response could not be parsed as JSON"],
-      };
-    }
+    // Use the prediction service to get or create prediction
+    const result = await getOrCreatePrediction(stock);
 
     res.status(200).json({
       success: true,
       data: {
-        stock: ticker,
-        currentPrice: currentPrice,
-        recentChange: recentChange,
-        prediction: prediction,
-        model: "deepseek/deepseek-r1",
-        timestamp: new Date().toISOString(),
-        usage: response.data.usage || null,
+        stock: result.symbol,
+        currentPrice: result.currentPrice,
+        recentChange: result.recentChange,
+        prediction: result.prediction,
+        model: result.model,
+        timestamp: result.timestamp,
+        fromCache: result.fromCache,
+        cacheInfo: result.fromCache
+          ? `Cached prediction from ${result.cachedAt}`
+          : `Fresh prediction generated at ${result.savedAt}`,
       },
     });
   } catch (error) {
-    console.error(
-      "Error in stock prediction:",
-      error.response?.data || error.message
-    );
+    console.error("Error in stock prediction:", error.message);
     res.status(500).json({
       success: false,
       message: "Failed to get stock prediction",
-      error: error.response?.data?.error || error.message,
+      error: error.message,
+    });
+  }
+});
+
+// Get predictions for all stocks (with sequential scheduling to avoid API rate limits)
+router.get("/stocks/predictions", async (req, res) => {
+  try {
+    const result = {};
+    const errors = [];
+
+    // Fetch predictions sequentially with index-based delays to avoid rate limiting
+    await Promise.all(
+      STOCKS.map(async (symbol, index) => {
+        try {
+          const prediction = await getOrCreatePrediction(symbol, index);
+          result[symbol] = {
+            symbol: prediction.symbol,
+            currentPrice: prediction.currentPrice,
+            recentChange: prediction.recentChange,
+            prediction: prediction.prediction,
+            model: prediction.model,
+            timestamp: prediction.timestamp,
+            fromCache: prediction.fromCache,
+            isFresh: prediction.isFresh,
+            isStale: prediction.isStale,
+            cachedAt: prediction.cachedAt,
+            scheduledRefreshIn: prediction.scheduledRefreshIn,
+          };
+        } catch (error) {
+          console.error(`Error fetching prediction for ${symbol}:`, error.message);
+          errors.push({
+            symbol,
+            error: error.message,
+          });
+          result[symbol] = null;
+        }
+      })
+    );
+
+    res.status(200).json({
+      success: true,
+      data: result,
+      stocks: STOCKS,
+      generatedAt: new Date().toISOString(),
+      errors: errors.length > 0 ? errors : undefined,
+    });
+  } catch (error) {
+    console.error("Error fetching stock predictions:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch stock predictions",
+      error: error.message,
     });
   }
 });
@@ -417,18 +267,19 @@ router.get("/stocks/historical", async (req, res) => {
     const { days = 30 } = req.query;
     const result = {};
 
-    // Fetch historical data for all stocks
-    const promises = STOCKS.map(async (symbol) => {
+    // Fetch all historical data in parallel
+    const historicalPromises = STOCKS.map(async (symbol) => {
       try {
         const data = await fetchHistoricalData(symbol, parseInt(days));
         result[symbol] = data;
       } catch (error) {
-        console.error(`Error fetching historical data for ${symbol}:`, error);
+        // console.error(`Error fetching historical data for ${symbol}:`, error);
         result[symbol] = [];
       }
     });
 
-    await Promise.all(promises);
+    await Promise.all(historicalPromises);
+
     res.status(200).json({
       success: true,
       data: result,
@@ -500,6 +351,563 @@ router.get("/stocks/current", async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to fetch current stock data",
+      error: error.message,
+    });
+  }
+});
+
+// ==================== TRADING APIs ====================
+
+// 1. GET /api/user/account - Get trading account info
+router.get("/account", async (req, res) => {
+  try {
+    const userId = req.user?._id;
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "User not authenticated",
+      });
+    }
+
+    const user = await User.findById(userId).select("tradingAccounts currentAccountType");
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      accounts: {
+        demo: user.tradingAccounts.demo,
+        real: user.tradingAccounts.real,
+      },
+      currentAccountType: user.currentAccountType,
+    });
+  } catch (error) {
+    console.error("Error fetching account info:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch account info",
+      error: error.message,
+    });
+  }
+});
+
+// 2. GET /api/user/positions - Get all positions for current account
+router.get("/positions", async (req, res) => {
+  try {
+    const userId = req.user?._id;
+    const { accountType } = req.query; // optional, defaults to user's current account
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "User not authenticated",
+      });
+    }
+
+    const user = await User.findById(userId).select("currentAccountType");
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    const finalAccountType = accountType || user.currentAccountType;
+
+    const positions = await Position.find({
+      userId,
+      accountType: finalAccountType,
+    })
+      .select("symbol shares avgBuyPrice currentPrice totalValue gainLoss gainLossPercent")
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      accountType: finalAccountType,
+      positions: positions || [],
+      count: positions?.length || 0,
+    });
+  } catch (error) {
+    console.error("Error fetching positions:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch positions",
+      error: error.message,
+    });
+  }
+});
+
+// 3. POST /api/user/buy - Execute buy order
+router.post("/buy", async (req, res) => {
+  try {
+    const userId = req.user?._id;
+    const { symbol, shares, accountType } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "User not authenticated",
+      });
+    }
+
+    if (!symbol || !shares || shares <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid symbol or shares",
+      });
+    }
+
+    // Get user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    const finalAccountType = accountType || user.currentAccountType;
+
+    // Get current stock price with timeout and fallback
+    let pricePerShare;
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      const stockData = await yahooFinance.quote(symbol);
+      clearTimeout(timeout);
+
+      if (!stockData) {
+        return res.status(404).json({
+          success: false,
+          message: `Stock ${symbol} not found`,
+        });
+      }
+      pricePerShare = stockData.regularMarketPrice;
+    } catch (stockError) {
+      console.warn(`Yahoo Finance timeout for ${symbol}, using fallback...`);
+      // Try to get cached price from stockStream
+      const cachedData = getAllCachedData();
+      const cachedStock = cachedData[symbol.toUpperCase()];
+
+      if (!cachedStock || cachedStock.length === 0) {
+        return res.status(503).json({
+          success: false,
+          message: `Unable to fetch price for ${symbol}. Stock service unavailable.`,
+        });
+      }
+
+      const latestCachedData = cachedStock[cachedStock.length - 1];
+      // Real-time data has 'price' field, historical has 'close'
+      pricePerShare = latestCachedData.price || latestCachedData.close;
+
+      if (!pricePerShare) {
+        return res.status(503).json({
+          success: false,
+          message: `No price data available for ${symbol}.`,
+        });
+      }
+
+      console.log(`Using cached price for ${symbol}: $${pricePerShare}`);
+    }
+    const totalAmount = shares * pricePerShare;
+    const account = user.tradingAccounts[finalAccountType];
+
+    // Check balance
+    if (account.balance < totalAmount) {
+      return res.status(400).json({
+        success: false,
+        message: `Insufficient balance. Required: $${totalAmount.toFixed(2)}, Available: $${account.balance.toFixed(2)}`,
+      });
+    }
+
+    // Create/Update Position
+    let position = await Position.findOne({
+      userId,
+      accountType: finalAccountType,
+      symbol: symbol.toUpperCase(),
+    });
+
+    if (position) {
+      // Update existing position
+      const oldTotalCost = position.totalCost;
+      const oldShares = position.shares;
+      const newTotalCost = oldTotalCost + totalAmount;
+      const newShares = oldShares + shares;
+      const newAvgBuyPrice = newTotalCost / newShares;
+
+      position.shares = newShares;
+      position.avgBuyPrice = newAvgBuyPrice;
+      position.totalCost = newTotalCost;
+      position.currentPrice = pricePerShare;
+      position.totalValue = newShares * pricePerShare;
+      position.gainLoss = position.totalValue - position.totalCost;
+      position.gainLossPercent = (position.gainLoss / position.totalCost) * 100;
+    } else {
+      // Create new position
+      position = new Position({
+        userId,
+        accountType: finalAccountType,
+        symbol: symbol.toUpperCase(),
+        shares,
+        avgBuyPrice: pricePerShare,
+        totalCost: totalAmount,
+        currentPrice: pricePerShare,
+        totalValue: totalAmount,
+        gainLoss: 0,
+        gainLossPercent: 0,
+      });
+    }
+
+    await position.save();
+
+    // Create Transaction
+    const transaction = new Transaction({
+      userId,
+      accountType: finalAccountType,
+      symbol: symbol.toUpperCase(),
+      type: "BUY",
+      shares,
+      pricePerShare,
+      totalAmount,
+      balanceBefore: account.balance,
+      balanceAfter: account.balance - totalAmount,
+    });
+
+    await transaction.save();
+
+    // Update User trading account
+    account.balance -= totalAmount;
+    account.totalInvested += totalAmount;
+    account.portfolioValue = account.portfolioValue + totalAmount;
+
+    // Add position to user's positions array if new
+    if (!position.createdAt) {
+      if (finalAccountType === "demo") {
+        user.demoPositions.push(position._id);
+      } else {
+        user.realPositions.push(position._id);
+      }
+    }
+
+    await user.save();
+
+    // Create/Update PortfolioHistory snapshot
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const allPositions = await Position.find({
+      userId,
+      accountType: finalAccountType,
+    }).lean();
+
+    const portfolioSnapshot = {
+      totalValue: account.balance + account.portfolioValue,
+      totalCost: allPositions.reduce((sum, p) => sum + p.totalCost, 0),
+      balance: account.balance,
+      positions: allPositions.map((p) => ({
+        symbol: p.symbol,
+        shares: p.shares,
+        avgBuyPrice: p.avgBuyPrice,
+        price: p.currentPrice,
+        value: p.totalValue,
+        gainLoss: p.gainLoss,
+      })),
+    };
+
+    portfolioSnapshot.gainLoss = portfolioSnapshot.totalValue - portfolioSnapshot.totalCost;
+    portfolioSnapshot.gainLossPercent = (portfolioSnapshot.gainLoss / portfolioSnapshot.totalCost) * 100 || 0;
+
+    await PortfolioHistory.findOneAndUpdate(
+      { userId, accountType: finalAccountType, date: today },
+      { $set: portfolioSnapshot },
+      { upsert: true, new: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: `Successfully bought ${shares} shares of ${symbol}`,
+      transaction: {
+        id: transaction._id,
+        symbol: symbol.toUpperCase(),
+        type: "BUY",
+        shares,
+        pricePerShare: pricePerShare.toFixed(2),
+        totalAmount: totalAmount.toFixed(2),
+        timestamp: transaction.timestamp,
+      },
+      position: {
+        symbol: position.symbol,
+        shares: position.shares,
+        avgBuyPrice: position.avgBuyPrice.toFixed(2),
+        currentPrice: position.currentPrice.toFixed(2),
+        totalValue: position.totalValue.toFixed(2),
+        gainLoss: position.gainLoss.toFixed(2),
+      },
+      updatedBalance: account.balance.toFixed(2),
+      updatedPortfolioValue: account.portfolioValue.toFixed(2),
+    });
+  } catch (error) {
+    console.error("Error in buy operation:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to execute buy order",
+      error: error.message,
+    });
+  }
+});
+
+// 4. POST /api/user/sell - Execute sell order
+router.post("/sell", async (req, res) => {
+  try {
+    const userId = req.user?._id;
+    const { symbol, shares, accountType } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "User not authenticated",
+      });
+    }
+
+    if (!symbol || !shares || shares <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid symbol or shares",
+      });
+    }
+
+    // Get user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    const finalAccountType = accountType || user.currentAccountType;
+
+    // Get existing position
+    const position = await Position.findOne({
+      userId,
+      accountType: finalAccountType,
+      symbol: symbol.toUpperCase(),
+    });
+
+    if (!position || position.shares < shares) {
+      return res.status(400).json({
+        success: false,
+        message: `Insufficient shares. You have ${position?.shares || 0} shares`,
+      });
+    }
+
+    // Get current stock price with timeout and fallback
+    let pricePerShare;
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      const stockData = await yahooFinance.quote(symbol);
+      clearTimeout(timeout);
+
+      if (!stockData) {
+        return res.status(404).json({
+          success: false,
+          message: `Stock ${symbol} not found`,
+        });
+      }
+      pricePerShare = stockData.regularMarketPrice;
+    } catch (stockError) {
+      console.warn(`Yahoo Finance timeout for ${symbol}, using fallback...`);
+      // Try to get cached price from stockStream
+      const cachedData = getAllCachedData();
+      const cachedStock = cachedData[symbol.toUpperCase()];
+
+      if (!cachedStock || cachedStock.length === 0) {
+        return res.status(503).json({
+          success: false,
+          message: `Unable to fetch price for ${symbol}. Stock service unavailable.`,
+        });
+      }
+
+      const latestCachedData = cachedStock[cachedStock.length - 1];
+      // Real-time data has 'price' field, historical has 'close'
+      pricePerShare = latestCachedData.price || latestCachedData.close;
+
+      if (!pricePerShare) {
+        return res.status(503).json({
+          success: false,
+          message: `No price data available for ${symbol}.`,
+        });
+      }
+
+      console.log(`Using cached price for ${symbol}: $${pricePerShare}`);
+    }
+    const totalAmount = shares * pricePerShare;
+    const account = user.tradingAccounts[finalAccountType];
+
+    // Calculate realized gain/loss
+    const costOfSoldShares = shares * position.avgBuyPrice;
+    const realizedGainLoss = totalAmount - costOfSoldShares;
+
+    // Create Transaction
+    const transaction = new Transaction({
+      userId,
+      accountType: finalAccountType,
+      symbol: symbol.toUpperCase(),
+      type: "SELL",
+      shares,
+      pricePerShare,
+      totalAmount,
+      balanceBefore: account.balance,
+      balanceAfter: account.balance + totalAmount,
+    });
+
+    await transaction.save();
+
+    // Update Position
+    position.shares -= shares;
+    position.totalCost = position.shares * position.avgBuyPrice;
+    position.currentPrice = pricePerShare;
+    position.totalValue = position.shares * pricePerShare;
+    position.gainLoss = position.totalValue - position.totalCost;
+    position.gainLossPercent = (position.gainLoss / position.totalCost) * 100 || 0;
+
+    if (position.shares === 0) {
+      // Delete position if all shares sold
+      await Position.findByIdAndDelete(position._id);
+      if (finalAccountType === "demo") {
+        user.demoPositions = user.demoPositions.filter((id) => id.toString() !== position._id.toString());
+      } else {
+        user.realPositions = user.realPositions.filter((id) => id.toString() !== position._id.toString());
+      }
+    } else {
+      await position.save();
+    }
+
+    // Update User trading account
+    account.balance += totalAmount;
+    account.portfolioValue -= costOfSoldShares;
+
+    await user.save();
+
+    // Create/Update PortfolioHistory snapshot
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const allPositions = await Position.find({
+      userId,
+      accountType: finalAccountType,
+    }).lean();
+
+    const portfolioSnapshot = {
+      totalValue: account.balance + account.portfolioValue,
+      totalCost: allPositions.reduce((sum, p) => sum + p.totalCost, 0),
+      balance: account.balance,
+      positions: allPositions.map((p) => ({
+        symbol: p.symbol,
+        shares: p.shares,
+        avgBuyPrice: p.avgBuyPrice,
+        price: p.currentPrice,
+        value: p.totalValue,
+        gainLoss: p.gainLoss,
+      })),
+    };
+
+    portfolioSnapshot.gainLoss = portfolioSnapshot.totalValue - portfolioSnapshot.totalCost;
+    portfolioSnapshot.gainLossPercent = (portfolioSnapshot.gainLoss / portfolioSnapshot.totalCost) * 100 || 0;
+
+    await PortfolioHistory.findOneAndUpdate(
+      { userId, accountType: finalAccountType, date: today },
+      { $set: portfolioSnapshot },
+      { upsert: true, new: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: `Successfully sold ${shares} shares of ${symbol}`,
+      transaction: {
+        id: transaction._id,
+        symbol: symbol.toUpperCase(),
+        type: "SELL",
+        shares,
+        pricePerShare: pricePerShare.toFixed(2),
+        totalAmount: totalAmount.toFixed(2),
+        timestamp: transaction.timestamp,
+      },
+      position: position.shares > 0 ? {
+        symbol: position.symbol,
+        shares: position.shares,
+        avgBuyPrice: position.avgBuyPrice.toFixed(2),
+        currentPrice: position.currentPrice.toFixed(2),
+        totalValue: position.totalValue.toFixed(2),
+        gainLoss: position.gainLoss.toFixed(2),
+      } : null,
+      realizedGainLoss: realizedGainLoss.toFixed(2),
+      updatedBalance: account.balance.toFixed(2),
+      updatedPortfolioValue: account.portfolioValue.toFixed(2),
+    });
+  } catch (error) {
+    console.error("Error in sell operation:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to execute sell order",
+      error: error.message,
+    });
+  }
+});
+
+// 5. GET /api/user/portfolio-history - Get portfolio performance history
+router.get("/portfolio-history", async (req, res) => {
+  try {
+    const userId = req.user?._id;
+    const { accountType, days = 30 } = req.query;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "User not authenticated",
+      });
+    }
+
+    const user = await User.findById(userId).select("currentAccountType");
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    const finalAccountType = accountType || user.currentAccountType;
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - parseInt(days));
+    startDate.setHours(0, 0, 0, 0);
+
+    const history = await PortfolioHistory.find({
+      userId,
+      accountType: finalAccountType,
+      date: { $gte: startDate },
+    })
+      .select("date totalValue totalCost gainLoss gainLossPercent balance")
+      .sort({ date: 1 })
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      accountType: finalAccountType,
+      days: parseInt(days),
+      history: history || [],
+      count: history?.length || 0,
+    });
+  } catch (error) {
+    console.error("Error fetching portfolio history:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch portfolio history",
       error: error.message,
     });
   }

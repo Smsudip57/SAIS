@@ -1,7 +1,4 @@
 const socketio = require("socket.io");
-// const Session = require("../models/session"); // Update path based on your folder structure
-// const session = require("../models/session");
-// const Notification = require("../models/notification"); // Update path based on your folder structure
 const mongoose = require("mongoose");
 const { startStockStream, stopStockStream, setIOInstance } = require("../services/stockStream");
 

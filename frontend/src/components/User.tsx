@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 
 import { LogOut, LogIn } from "lucide-react";
-import React from "react";
+import React, { useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -31,6 +31,16 @@ export const UserPopover: React.FC<UserPopoverProps> = ({
   className,
 }) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  // Redux state
+  const user = useSelector((state: RootState) => state.auth.user);
+  const loading = useSelector((state: RootState) => state.auth.loading);
+
+  // Auth mutation
+  const [logout] = useLogoutMutation();
+
   const navOptions = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Trading", href: "/trading", icon: TrendingUp },
@@ -38,11 +48,6 @@ export const UserPopover: React.FC<UserPopoverProps> = ({
     { name: "Analytics", href: "/analytics", icon: BarChart3 },
     { name: "Settings", href: "/settings", icon: Settings },
   ];
-  const user = useSelector((state: RootState) => state.auth.user);
-  const loading = useSelector((state: RootState) => state.auth.loading);
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
-  const [logout] = useLogoutMutation();
 
   const handleLogout = async () => {
     try {

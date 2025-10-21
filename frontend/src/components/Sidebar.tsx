@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -20,6 +20,7 @@ const navigation = [
 
 export const Sidebar: React.FC = () => {
   const location = useLocation();
+  const [logoError, setLogoError] = useState(false);
 
   return (
     <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-64 lg:flex-col">
@@ -29,11 +30,20 @@ export const Sidebar: React.FC = () => {
           className="flex h-16 shrink-0 items-center focus:outline-none"
         >
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-white" />
-            </div>
+            {!logoError ? (
+              <img
+                src="/android-chrome-512x512.png"
+                alt="SAIS Logo"
+                className="w-8 h-8 rounded-md"
+                onError={() => setLogoError(true)}
+              />
+            ) : (
+              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-white" />
+              </div>
+            )}
             <span className="text-xl font-bold text-gray-900 dark:text-white">
-              StockTrader Pro
+              SAIS
             </span>
           </div>
         </Link>
