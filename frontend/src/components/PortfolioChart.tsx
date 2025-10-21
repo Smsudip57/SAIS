@@ -30,7 +30,7 @@ export const PortfolioChart: React.FC = () => {
   const chartData = useMemo(() => {
     // Use API data if available, otherwise use Redux portfolioHistory
     const historyList = historyData?.history || portfolioHistory || [];
-    
+
     if (!historyList || historyList.length === 0) {
       // Return empty data placeholder if no history
       return [{

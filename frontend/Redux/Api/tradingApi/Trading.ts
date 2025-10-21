@@ -133,7 +133,7 @@ export const tradingApi = baseApi.injectEndpoints({
                     const { data } = await queryFulfilled;
                     console.log("🔮 Stock Predictions API Response:", data);
                 } catch (error) {
-                    console.error( error);
+                    console.error(error);
                 }
             },
         }),
