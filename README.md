@@ -272,8 +272,8 @@ Before you begin, ensure you have the following installed:
 ### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/Smsudip57/dubai.git
-cd dubai
+git clone https://github.com/Smsudip57/SAIS.git
+cd SAIS
 ```
 
 ### Step 2: Environment Setup
