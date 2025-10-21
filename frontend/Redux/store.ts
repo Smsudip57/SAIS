@@ -1,11 +1,13 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { baseApi } from "./Api/baseApi";
 import authReducer from "./authSlice";
+import tradingReducer from "./tradingSlice";
 
 export const store = configureStore({
   reducer: {
     [baseApi.reducerPath]: baseApi.reducer,
     auth: authReducer,
+    trading: tradingReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(baseApi.middleware),

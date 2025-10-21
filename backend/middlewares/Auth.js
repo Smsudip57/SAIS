@@ -15,7 +15,7 @@ const adminAuth = async (req, res, next) => {
     let access;
     try {
       access = jwt.verify(accessToken, process.env.JWT_SECRET);
-    } catch (error) {}
+    } catch (error) { }
 
     let refresh;
     try {
@@ -110,104 +110,62 @@ const adminAuth = async (req, res, next) => {
 
 const userAuth = async (req, res, next) => {
   try {
-    if (req.path === "/plan") {
-      return next();
-    }
     const accessToken = req.cookies.access;
     const refreshToken = req.cookies.refresh;
-    if (!accessToken && !refreshToken) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized",
-      });
-    }
-
-    let access;
-    try {
-      access = jwt.verify(accessToken, process.env.JWT_SECRET);
-    } catch (error) {}
 
     let refresh;
     try {
       refresh = jwt.verify(refreshToken, process.env.JWT_SECRET);
     } catch (error) {
-      res.clearCookie("refresh", { path: "/" });
-      res.clearCookie("access", { path: "/" });
-      return res.status(403).json({
-        success: false,
-        message: "Your session has expired",
-      });
+      // If refresh token invalid, just continue without user
+      return next();
     }
+
     if (!refresh) {
-      res.clearCookie("refresh", { path: "/" });
-      res.clearCookie("access", { path: "/" });
-      return res.status(403).json({
-        success: false,
-        message: "Your session has expired",
-      });
+      // If no refresh token, just continue without user
+      return next();
     }
 
     const { userId } = refresh;
     const user = await User.findById(userId).select("-password");
-    if (!user) {
-      res.clearCookie("refresh", { path: "/" });
-      res.clearCookie("access", { path: "/" });
-      return res.status(404).json({
-        success: false,
-        message: "Unauthorized",
-      });
-    }
-    if (!access) {
-      const refreshtoken = jwt.sign(
-        { userId: user._id },
-        process.env.JWT_SECRET,
-        {
-          expiresIn: "30d",
-        }
-      );
-      res.cookie("refresh", refreshtoken, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "None",
-        path: "/",
-      });
-      const accesstoken = jwt.sign(
-        { userId: user._id },
-        process.env.JWT_SECRET,
-        {
-          expiresIn: "1h",
-        }
-      );
-      res.cookie("access", accesstoken, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "None",
-        path: "/",
-      });
-    }
-    user.lastLogin = new Date();
-    await user.save();
-    if (!user.isActive) {
-      return res.status(403).json({
-        success: false,
-        message: "Your account is not active",
-      });
-    }
-    if (user.isBanned) {
-      return res.status(403).json({
-        success: false,
-        message: "Your account is banned",
-      });
-    }
-    req.user = user;
 
+    if (user) {
+      // User exists, set it on request and refresh tokens if needed
+      if (!accessToken) {
+        const refreshtoken = jwt.sign(
+          { userId: user._id },
+          process.env.JWT_SECRET,
+          { expiresIn: "30d" }
+        );
+        res.cookie("refresh", refreshtoken, {
+          httpOnly: true,
+          secure: true,
+          sameSite: "None",
+          path: "/",
+        });
+        const accesstoken = jwt.sign(
+          { userId: user._id },
+          process.env.JWT_SECRET,
+          { expiresIn: "1h" }
+        );
+        res.cookie("access", accesstoken, {
+          httpOnly: true,
+          secure: true,
+          sameSite: "None",
+          path: "/",
+        });
+      }
+      user.lastLogin = new Date();
+      await user.save();
+      req.user = user;
+    }
+
+    // Always proceed, whether user is authenticated or not
     next();
   } catch (error) {
-    console.error("Error authenticating user:", error);
-    return res.status(500).json({
-      success: false,
-      message: "An error occurred while authenticating the user",
-    });
+    console.error("Error in userAuth middleware:", error);
+    // Even on error, continue without user
+    next();
   }
 };
 

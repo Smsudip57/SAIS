@@ -49,7 +49,9 @@ app.use(express.json());
 
 app.use("/api", auth);
 // app.use('/api/chat', chat);
-app.use("/api/user", user);
+// Protect /api/user routes with userAuth middleware so req.user is available
+app.use("/api/user", userAuth, user);
+// Admin routes remain protected by adminAuth
 app.use("/api/admin", adminAuth, admin);
 // app.use('/api/payment', payment);
 

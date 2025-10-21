@@ -1,6 +1,8 @@
 import React, { useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { useTradingContext } from '@/contexts/TradingContext';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../Redux/store';
+import { useGetPortfolioHistoryQuery } from '../../Redux/Api/tradingApi/Trading';
 
 interface TooltipProps {
   active?: boolean;
@@ -12,39 +14,38 @@ interface TooltipProps {
 }
 
 export const PortfolioChart: React.FC = () => {
-  const { currentAccount, isDemo } = useTradingContext();
+  const { accounts, currentAccountType, portfolioHistory } = useSelector(
+    (state: RootState) => state.trading
+  );
 
-  // Generate mock historical data for the chart
+  const currentAccount = accounts?.[currentAccountType as keyof typeof accounts];
+
+  // Fetch portfolio history from API
+  const { data: historyData, isLoading: historyLoading } = useGetPortfolioHistoryQuery(
+    { accountType: currentAccountType, days: 30 },
+    { skip: !currentAccountType }
+  );
+
+  // Prepare chart data from API response
   const chartData = useMemo(() => {
-    const data = [];
-    const baseValue = isDemo ? 10000 : 1000;
-    const currentValue = currentAccount.balance + currentAccount.portfolioValue;
+    // Use API data if available, otherwise use Redux portfolioHistory
+    const historyList = historyData?.history || portfolioHistory || [];
     
-    // Generate 30 days of mock data
-    for (let i = 29; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      
-      // Create realistic portfolio progression
-      let value;
-      if (i === 0) {
-        value = currentValue;
-      } else {
-        // Simulate portfolio growth/decline over time
-        const progress = (29 - i) / 29;
-        const volatility = Math.sin(i * 0.5) * 200 + Math.random() * 100 - 50;
-        value = baseValue + (currentValue - baseValue) * progress + volatility;
-      }
-      
-      data.push({
-        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        value: Math.max(0, value),
-        fullDate: date.toISOString().split('T')[0]
-      });
+    if (!historyList || historyList.length === 0) {
+      // Return empty data placeholder if no history
+      return [{
+        date: 'No data',
+        value: 0,
+      }];
     }
-    
-    return data;
-  }, [currentAccount, isDemo]);
+
+    // Convert history data to chart format
+    return historyList.map((item: any) => ({
+      date: new Date(item?.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      value: item?.totalValue ?? 0,
+      fullDate: item?.date,
+    }));
+  }, [historyData, portfolioHistory]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -69,31 +70,49 @@ export const PortfolioChart: React.FC = () => {
     return null;
   };
 
-  const minValue = Math.min(...chartData.map(d => d.value));
-  const maxValue = Math.max(...chartData.map(d => d.value));
-  const padding = (maxValue - minValue) * 0.1;
+  const minValue = Math.min(...chartData.map(d => d?.value ?? 0));
+  const maxValue = Math.max(...chartData.map(d => d?.value ?? 0));
+  const padding = (maxValue - minValue) * 0.1 || 100;
+
+  // Show loading state
+  if (historyLoading) {
+    return (
+      <div className="h-80 flex items-center justify-center">
+        <p className="text-gray-500">Loading portfolio history...</p>
+      </div>
+    );
+  }
+
+  // Show empty state
+  if (!chartData || chartData.length === 0 || (chartData.length === 1 && chartData[0].value === 0)) {
+    return (
+      <div className="h-80 flex items-center justify-center">
+        <p className="text-gray-500">No portfolio history available yet</p>
+      </div>
+    );
+  }
 
   return (
     <div className="h-80">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-gray-700" />
-          <XAxis 
-            dataKey="date" 
+          <XAxis
+            dataKey="date"
             className="text-gray-600 dark:text-gray-400"
             fontSize={12}
           />
-          <YAxis 
+          <YAxis
             domain={[minValue - padding, maxValue + padding]}
             tickFormatter={formatCurrency}
             className="text-gray-600 dark:text-gray-400"
             fontSize={12}
           />
           <Tooltip content={<CustomTooltip />} />
-          <Line 
-            type="monotone" 
-            dataKey="value" 
-            stroke="#3b82f6" 
+          <Line
+            type="monotone"
+            dataKey="value"
+            stroke="#3b82f6"
             strokeWidth={2}
             dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
             activeDot={{ r: 6, stroke: '#3b82f6', strokeWidth: 2, fill: '#ffffff' }}

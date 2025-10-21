@@ -6,6 +6,6 @@ export const baseApi = createApi({
     baseUrl: import.meta.env.VITE_BASE_URL,
     credentials: "include",
   }),
-  tagTypes: ["User", "Portfolio", "Trade", "Transaction", "Settings"],
+  tagTypes: ["User", "Portfolio", "Trade", "Transaction", "Settings", "Predictions"],
   endpoints: () => ({}),
 });

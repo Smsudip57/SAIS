@@ -6,6 +6,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Stock } from '@/lib/mockData';
 import { TrendingUp, TrendingDown, Brain, ChevronDown, ChevronUp, Info, Loader } from 'lucide-react';
 import { useSharedStockStream } from '@/hooks/useSharedStockStream';
+import { useGetStocksPredictionsQuery } from '../../Redux/Api/tradingApi/Trading';
 
 interface StockCardProps {
   symbol?: string;
@@ -17,6 +18,14 @@ interface StockCardProps {
 export const StockCard: React.FC<StockCardProps> = ({ symbol, stock, compact = false, onTrade }) => {
   const [showReasoning, setShowReasoning] = useState(false);
 
+  // Fetch predictions from API - only once when component mounts
+  const { data: predictionsData, isLoading: predictionsLoading } = useGetStocksPredictionsQuery(undefined, {
+    skip: false,
+    refetchOnMountOrArgChange: false,
+    refetchOnReconnect: false,
+    refetchOnFocus: false,
+  });
+
   // Use real-time data if symbol is provided
   const shouldUseRealtime = !!symbol;
   const { stockData, isConnected } = useSharedStockStream(symbol);
@@ -24,6 +33,13 @@ export const StockCard: React.FC<StockCardProps> = ({ symbol, stock, compact = f
   // Determine which data source to use
   const realTimeData = shouldUseRealtime ? stockData : null;
   const currentData = realTimeData?.currentData;
+
+  // Get prediction data for this stock
+  const predictionData = symbol && predictionsData?.data?.[symbol?.toUpperCase()];
+
+  React.useEffect(() => {
+    console.log('🔮 Predictions Data:', predictionsData?.data);
+  }, [predictionsData?.data]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -63,13 +79,27 @@ export const StockCard: React.FC<StockCardProps> = ({ symbol, stock, compact = f
     }
   };
 
-  const getPredictionIcon = (direction: string) => {
+  const getPredictionDirection = (prediction: any) => {
+    if (typeof prediction === 'object' && prediction?.direction) {
+      return getPredictionColor(prediction.direction);
+    }
+    if (typeof prediction === 'string') {
+      return getPredictionColor(prediction);
+    }
+    return 'text-gray-600';
+  };
+
+  const getPredictionIcon = (prediction: any) => {
+    const direction = typeof prediction === 'object' ? prediction?.direction : prediction;
     switch (direction) {
       case 'up': return <TrendingUp className="w-3 h-3" />;
       case 'down': return <TrendingDown className="w-3 h-3" />;
       default: return <Brain className="w-3 h-3" />;
     }
   };
+
+  // Check if prediction is loading
+  const predictionLoading = predictionsLoading;
 
   // Loading state for real-time data
   if (shouldUseRealtime && realTimeData?.isLoading) {
@@ -155,38 +185,62 @@ export const StockCard: React.FC<StockCardProps> = ({ symbol, stock, compact = f
           </div>
         )}
 
-        {(displayData as any)?.prediction && (
+        {/* {predictionData && (
           <div className="mb-4">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center space-x-1">
                 <Brain className="w-4 h-4 text-purple-600" />
                 <span className="text-sm font-medium">AI Prediction</span>
               </div>
-              <Badge variant="outline" className={getPredictionColor((displayData as any).prediction.direction)}>
-                <div className="flex items-center space-x-1">
-                  {getPredictionIcon((displayData as any).prediction.direction)}
-                  <span className="capitalize">{(displayData as any).prediction.direction}</span>
-                </div>
-              </Badge>
+              {predictionLoading ? (
+                <Loader className="w-4 h-4 animate-spin text-purple-600" />
+              ) : predictionData?.prediction ? (
+                <Badge variant="outline" className={getPredictionDirection(predictionData.prediction)}>
+                  <div className="flex items-center space-x-1">
+                    {getPredictionIcon(predictionData.prediction)}
+                    <span className="capitalize">{predictionData.prediction}</span>
+                  </div>
+                </Badge>
+              ) : null}
             </div>
             <div className="text-sm space-y-1">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Target Price:</span>
-                <span className="font-medium">{formatCurrency((displayData as any)?.prediction?.targetPrice)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Confidence:</span>
-                <span className="font-medium">{(displayData as any)?.prediction?.confidence ?? 0}%</span>
-              </div>
+              {predictionData?.currentPrice && (
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Current Price:</span>
+                  <span className="font-medium">{formatCurrency(predictionData.currentPrice)}</span>
+                </div>
+              )}
+              {predictionData?.prediction && (
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Prediction Direction:</span>
+                  <span className="font-medium capitalize">{predictionData.prediction}</span>
+                </div>
+              )}
+              {predictionData?.recentChange && (
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Recent Change:</span>
+                  <span className={`font-medium ${predictionData.recentChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {predictionData.recentChange >= 0 ? '+' : ''}{predictionData.recentChange.toFixed(2)}%
+                  </span>
+                </div>
+              )}
+              {predictionData?.fromCache !== undefined && (
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-500">Cache Status:</span>
+                  <span className={`font-medium ${predictionData.fromCache ? 'text-blue-600' : 'text-green-600'}`}>
+                    {predictionData.isFresh ? '🟢 Fresh' : predictionData.isStale ? '🟡 Stale (Refreshing)' : '⚪ New'}
+                  </span>
+                </div>
+              )}
             </div>
 
-            {!compact && (
+            {!compact && predictionData?.prediction?.reasoning && (
               <Collapsible open={showReasoning} onOpenChange={setShowReasoning}>
                 <CollapsibleTrigger asChild>
                   <Button variant="ghost" size="sm" className="w-full mt-2 p-0 h-auto text-xs">
                     <div className="flex items-center space-x-1">
                       <Info className="w-3 h-3" />
-                      <span>View AI Reasoning</span>
+                      <span>View AI Prediction Details</span>
                       {showReasoning ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                     </div>
                   </Button>
@@ -194,25 +248,15 @@ export const StockCard: React.FC<StockCardProps> = ({ symbol, stock, compact = f
                 <CollapsibleContent className="mt-2">
                   <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg text-xs space-y-2">
                     <div>
-                      <p className="font-medium text-gray-900 dark:text-white mb-1">Analysis:</p>
-                      <p className="text-gray-700 dark:text-gray-300">{(displayData as any).prediction.reasoning}</p>
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900 dark:text-white mb-1">Key Factors:</p>
-                      <div className="flex flex-wrap gap-1">
-                        {(displayData as any).prediction.factors.map((factor, index) => (
-                          <Badge key={index} variant="secondary" className="text-xs">
-                            {factor}
-                          </Badge>
-                        ))}
-                      </div>
+                      <p className="font-medium text-gray-900 dark:text-white mb-1">AI Analysis:</p>
+                      <p className="text-gray-700 dark:text-gray-300">{predictionData.prediction?.reasoning || 'No reasoning available'}</p>
                     </div>
                   </div>
                 </CollapsibleContent>
               </Collapsible>
             )}
           </div>
-        )}
+        )} */}
 
         {onTrade && !compact && (
           <div className="flex space-x-2">
