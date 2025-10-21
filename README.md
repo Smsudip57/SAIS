@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![SAIS Logo](frontend/public/sais-logo.png)
+![SAIS Logo](frontend/public/android-chrome-512x512.png)
 
 **A comprehensive platform empowering financial education through AI-powered stock market analysis, trading simulation, and real-time market data.**
 
