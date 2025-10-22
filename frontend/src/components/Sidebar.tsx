@@ -9,7 +9,9 @@ import {
   LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
+import { useLogoutMutation } from "../../Redux/Api/authApi/Auth";
+import { clearUser } from "../../Redux/authSlice";
+import { useDispatch } from "react-redux";
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Trading", href: "/trading", icon: TrendingUp },
@@ -21,7 +23,17 @@ const navigation = [
 export const Sidebar: React.FC = () => {
   const location = useLocation();
   const [logoError, setLogoError] = useState(false);
-
+  const [logout] = useLogoutMutation();
+  const dispatch = useDispatch();
+  const handleLogout = async () => {
+    try {
+      await logout(undefined).unwrap();
+    } catch (e) {
+      // Optionally handle error
+    } finally {
+      dispatch(clearUser());
+    }
+  };
   return (
     <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-64 lg:flex-col">
       <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white dark:bg-gray-800 px-6 pb-4 shadow-lg">
@@ -81,7 +93,7 @@ export const Sidebar: React.FC = () => {
               </ul>
             </li>
             <li className="mt-auto">
-              <button className="group -mx-2 flex w-full gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-blue-700 dark:hover:text-blue-400">
+              <button className="group -mx-2 flex w-full gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-blue-700 dark:hover:text-blue-400" onClick={handleLogout}>
                 <LogOut className="h-6 w-6 shrink-0 text-gray-400 group-hover:text-blue-700 dark:group-hover:text-blue-400" />
                 Sign out
               </button>
