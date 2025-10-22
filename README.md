@@ -845,8 +845,8 @@ We welcome contributions! Please follow these steps:
 ## 📞 Contact & Support
 
 - **GitHub**: [Smsudip57](https://github.com/Smsudip57)
-- **Project Repository**: [dubai](https://github.com/Smsudip57/dubai)
-- **Report Issues**: [GitHub Issues](https://github.com/Smsudip57/dubai/issues)
+- **Project Repository**: [dubai](https://github.com/Smsudip57/SAIS)
+- **Report Issues**: [GitHub Issues](https://github.com/Smsudip57/SAIS/issues)
 
 ---
 
