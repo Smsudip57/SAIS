@@ -227,21 +227,21 @@ export default function HomePage() {
               {
                 name: "Hassan Al Qahtani",
                 role: "Lead Developer",
-                image: "hassan.jpeg",
+                image: "/AlQahtani.jpeg",
                 description:
                   "Full-stack developer with expertise in React and modern web technologies.",
               },
               {
                 name: "Mohamed Alblooshi",
                 role: "Web Engineer",
-                image: "alblooshi.jpeg",
+                image: "/Alblooshi.jpeg",
                 description:
                   "Frontend specialist focused on creating intuitive user experiences.",
               },
               {
                 name: "Mohamed Almenhali",
                 role: "Researcher",
-                image: "almenhali.jpeg",
+                image: "/Almenhali.jpeg",
                 description:
                   "Financial markets researcher and data analysis expert.",
               },
@@ -255,7 +255,8 @@ export default function HomePage() {
                     <img
                       src={member.image}
                       alt={member.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      className={`w-full h-full group-hover:scale-105 transition-transform duration-300 object-cover `}
+                      style={index === 0 ? { objectPosition: "center 10%" } : index === 1 ? { objectPosition: "center 30%" } : {objectPosition: "center 50%" }}
                       onError={(e) => {
                         e.currentTarget.style.display = "none";
                       }}
@@ -366,12 +367,12 @@ export default function HomePage() {
               {/* Header section with gradient */}
               <div className="bg-gradient-to-r from-blue-600  to-indigo-600 p-8 text-center flex flex-col items-center justify-center w-1/2">
                 {/* <div className="w-16 h-16 mx-auto mb-4 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center"> */}
-                  <img
-                    src="/android-chrome-512x512.png"
-                    alt="SAIS Logo"
-                    className="w-14 h-14 rounded-md"
-                    onError={() => setLogoError(true)}
-                  />
+                <img
+                  src="/android-chrome-512x512.png"
+                  alt="SAIS Logo"
+                  className="w-14 h-14 rounded-md"
+                  onError={() => setLogoError(true)}
+                />
                 {/* </div> */}
                 <h3 className="text-2xl font-bold text-white mb-2">
                   Join the Revolution
