@@ -172,6 +172,14 @@ export default function HomePage() {
       <section className="relative py-20 px-6 text-center overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-white via-blue-100 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-purple-900 " />
         <div className="container mx-auto relative z-10 max-w-4xl">
+          <div className="mb-8 flex justify-center">
+            <img
+              src="/android-chrome-512x512.png"
+              alt="SAIS Logo"
+              className="w-20 h-20 rounded-full shadow-lg"
+              onError={() => setLogoError(true)}
+            />
+          </div>
           <Badge variant="secondary" className="mb-6 text-sm">
             Financial Education Platform
           </Badge>
@@ -274,6 +282,49 @@ export default function HomePage() {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Advisor Section */}
+      <section className="py-20 px-6 bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-indigo-950 dark:via-gray-900 dark:to-purple-950">
+        <div className="container mx-auto max-w-4xl">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+              Our Advisor
+            </h2>
+            <p className="text-lg text-gray-600 dark:text-gray-300">
+              Guided by industry expertise and years of financial market experience
+            </p>
+          </div>
+
+          <div className="flex justify-center">
+            <Card className="w-full md:w-96 group hover:shadow-xl transition-all duration-300">
+              <CardContent className="pt-6">
+                <div className="w-40 h-40 mx-auto mb-6 rounded-full overflow-hidden bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900 dark:to-indigo-900">
+                  <img
+                    src="/Nidal-Saleh.jpeg"
+                    alt="Nidal Saleh"
+                    className="w-full h-full group-hover:scale-105 transition-transform duration-300 object-cover"
+                    style={{ objectPosition: "center 0%" }}
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                    }}
+                  />
+                </div>
+                <div className="text-center">
+                  <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">
+                    Nidal Saleh
+                  </h3>
+                  <Badge className="mb-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
+                    Advisor
+                  </Badge>
+                  <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                    With extensive experience in financial markets and investment strategy, Nidal brings invaluable insights and mentorship to guide our platform and community towards success.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
