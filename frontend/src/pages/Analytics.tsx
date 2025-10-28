@@ -267,7 +267,7 @@ export default function Analytics() {
                     <th className="text-right py-3 px-4 font-medium text-gray-900 dark:text-white">Target Price</th>
                     <th className="text-right py-3 px-4 font-medium text-gray-900 dark:text-white">Potential</th>
                     <th className="text-center py-3 px-4 font-medium text-gray-900 dark:text-white">Confidence</th>
-                    <th className="text-center py-3 px-4 font-medium text-gray-900 dark:text-white">Analysis</th>
+                    {/* <th className="text-center py-3 px-4 font-medium text-gray-900 dark:text-white">Analysis</th> */}
                   </tr>
                 </thead>
                 <tbody>
@@ -304,7 +304,7 @@ export default function Analytics() {
                             <Progress value={prediction.confidence} className="w-16" />
                           </div>
                         </td>
-                        <td className="py-4 px-4 text-center">
+                        {/* <td className="py-4 px-4 text-center">
                           <Dialog>
                             <DialogTrigger asChild>
                               <Button
@@ -387,7 +387,7 @@ export default function Analytics() {
                               </div>
                             </DialogContent>
                           </Dialog>
-                        </td>
+                        </td> */}
                       </tr>
                     );
                   })}
