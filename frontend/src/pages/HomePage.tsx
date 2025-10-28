@@ -291,7 +291,7 @@ export default function HomePage() {
         <div className="container mx-auto max-w-4xl">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-              Our Advisor
+              Our Supervisor
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-300">
               Guided by industry expertise and years of financial market experience
@@ -317,10 +317,10 @@ export default function HomePage() {
                     Nidal Saleh
                   </h3>
                   <Badge className="mb-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
-                    Advisor
+                    Supervisor
                   </Badge>
                   <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                    With extensive experience in financial markets and investment strategy, Nidal brings invaluable insights and mentorship to guide our platform and community towards success.
+                    With extensive experience in Coding and Development, Nidal brings invaluable insights and mentorship to guide our platform and community towards success.
                   </p>
                 </div>
               </CardContent>
