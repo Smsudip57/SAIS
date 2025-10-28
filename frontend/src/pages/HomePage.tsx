@@ -256,7 +256,7 @@ export default function HomePage() {
                       src={member.image}
                       alt={member.name}
                       className={`w-full h-full group-hover:scale-105 transition-transform duration-300 object-cover `}
-                      style={index === 0 ? { objectPosition: "center 10%" } : index === 1 ? { objectPosition: "center 30%" } : {objectPosition: "center 50%" }}
+                      style={index === 0 ? { objectPosition: "center 10%" } : index === 1 ? { objectPosition: "center 30%" } : { objectPosition: "center 45%", transform: "scale(1.3)" }}
                       onError={(e) => {
                         e.currentTarget.style.display = "none";
                       }}
