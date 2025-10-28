@@ -18,7 +18,11 @@ export const StockStreamProvider: React.FC<{ children: React.ReactNode }> = ({
 
     // Initialize socket connection (once)
     useEffect(() => {
-        const newSocket = io(import.meta.env.VITE_BASE_URL?.replace('/api', '') || "http://localhost:3001", {
+        // Get the base URL and remove /api suffix if present
+        const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:3001/api";
+        const socketUrl = baseUrl.replace(/\/api\/?$/, '') || "http://localhost:3001";
+
+        const newSocket = io(socketUrl, {
             reconnection: true,
             reconnectionDelay: 1000,
             reconnectionDelayMax: 5000,
