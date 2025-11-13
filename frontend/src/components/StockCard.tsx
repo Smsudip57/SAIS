@@ -20,7 +20,7 @@ interface StockCardProps {
 
 export const StockCard: React.FC<StockCardProps> = ({ symbol, stock, compact = false, onTrade }) => {
   const [showReasoning, setShowReasoning] = useState(false);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   // Fetch predictions from API - only once when component mounts
   const { data: predictionsData, isLoading: predictionsLoading } = useGetStocksPredictionsQuery(undefined, {
@@ -39,7 +39,24 @@ export const StockCard: React.FC<StockCardProps> = ({ symbol, stock, compact = f
   const currentData = realTimeData?.currentData;
 
   // Get prediction data for this stock
-  const predictionData = symbol && predictionsData?.data?.[symbol?.toUpperCase()];
+  const rawPredictionData = symbol && predictionsData?.data?.[symbol?.toUpperCase()];
+  
+  // Select language-specific prediction (with fallback to legacy format)
+  const predictionData = React.useMemo(() => {
+    if (!rawPredictionData) return null;
+    
+    // If new multi-language format exists, use it
+    if (rawPredictionData.predictions) {
+      const langPrediction = rawPredictionData.predictions[i18n.language] || rawPredictionData.predictions.en;
+      return {
+        ...rawPredictionData,
+        prediction: langPrediction
+      };
+    }
+    
+    // Otherwise, use legacy format
+    return rawPredictionData;
+  }, [rawPredictionData, i18n.language]);
 
   React.useEffect(() => {
     console.log('🔮 Predictions Data:', predictionsData?.data);

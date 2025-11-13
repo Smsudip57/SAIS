@@ -13,7 +13,7 @@ import { formatCurrency } from '@/config/translations/formatters';
 
 export default function Analytics() {
   const [selectedStock, setSelectedStock] = useState<string | null>(null);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   // Fetch stock predictions from backend
   const { data: predictionsData, isLoading: predictionsLoading } = useGetStocksPredictionsQuery(undefined);
@@ -39,7 +39,7 @@ export default function Analytics() {
     return 'text-red-600';
   };
 
-  // Process predictions data
+  // Process predictions data with language-specific selection
   const processedPredictions = useMemo(() => {
     const stockData = stockStreamContext?.stockData || {};
 
@@ -50,7 +50,17 @@ export default function Analytics() {
       .map(([symbol, prediction]: [string, any]) => {
         const streamData = stockData[symbol];
         const currentPrice = streamData?.currentData?.price || prediction.currentPrice || 0;
-        const pred = prediction.prediction || {};
+        
+        // Select language-specific prediction (with fallback to legacy format)
+        let pred;
+        if (prediction.predictions) {
+          // New multi-language format
+          pred = prediction.predictions[i18n.language] || prediction.predictions.en || {};
+        } else {
+          // Legacy format
+          pred = prediction.prediction || {};
+        }
+        
         const predictedChange = pred.pred_pct || 0;
         const targetPrice = currentPrice * (1 + predictedChange / 100);
         const confidence = Math.round((pred.confidence || 0) * 100);
@@ -68,7 +78,7 @@ export default function Analytics() {
           },
         };
       });
-  }, [predictionsData?.data, stockStreamContext?.stockData]);
+  }, [predictionsData?.data, stockStreamContext?.stockData, i18n.language]);
 
   const bullishPredictions = processedPredictions.filter(
     (stock) => stock.prediction.predictedChange > 0
