@@ -5,16 +5,17 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CheckCircle, AlertCircle, Camera, Shield } from 'lucide-react';
 import { FaceAuth } from './FaceAuth';
 import { toast } from 'sonner';
+import { useRegisterFaceMutation } from '../../Redux/Api/userApi/User';
 
 interface FaceRegistrationProps {
   onRegistrationComplete?: () => void;
 }
 
-export const FaceRegistration: React.FC<FaceRegistrationProps> = ({ 
-  onRegistrationComplete 
+export const FaceRegistration: React.FC<FaceRegistrationProps> = ({
+  onRegistrationComplete
 }) => {
   const [step, setStep] = useState<'info' | 'capture' | 'success'>('info');
-  const [isRegistering, setIsRegistering] = useState(false);
+  const [registerFace, { isLoading: isRegistering }] = useRegisterFaceMutation();
 
   const handleStartCapture = () => {
     setStep('capture');
@@ -22,42 +23,43 @@ export const FaceRegistration: React.FC<FaceRegistrationProps> = ({
 
   const handleFaceCaptured = async (faceDescriptor?: number[]) => {
     if (!faceDescriptor) {
+      console.error('❌ No face descriptor received');
       toast.error('Failed to capture face descriptor');
       setStep('info');
       return;
     }
 
-    setIsRegistering(true);
+    console.log('✅ Face captured, descriptor length:', faceDescriptor.length);
 
     try {
-      const response = await fetch('/api/user/face/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ faceDescriptor }),
+      console.log('📤 Registering face with Redux API...');
+
+      const response = await registerFace({ faceDescriptor }).unwrap();
+
+      console.log('📊 Response:', response);
+      console.log('✅ Face registration successful');
+
+      setStep('success');
+      toast.success('Face authentication registered successfully!');
+
+      if (onRegistrationComplete) {
+        setTimeout(() => {
+          onRegistrationComplete();
+        }, 2000);
+      }
+    } catch (error: any) {
+      console.error('❌ Error registering face:', error);
+      console.error('Error details:', {
+        message: error?.data?.message || error?.message,
+        status: error?.status,
+        error: error,
       });
 
-      const data = await response.json();
-
-      if (data.success) {
-        setStep('success');
-        toast.success('Face authentication registered successfully!');
-        
-        if (onRegistrationComplete) {
-          setTimeout(() => {
-            onRegistrationComplete();
-          }, 2000);
-        }
-      } else {
-        toast.error(data.message || 'Failed to register face authentication');
-        setStep('info');
-      }
-    } catch (error) {
-      console.error('Error registering face:', error);
-      toast.error('An error occurred while registering face authentication');
+      const errorMsg = error?.data?.message ||
+        error?.message ||
+        'An error occurred while registering face authentication';
+      toast.error(`Error: ${errorMsg}`);
       setStep('info');
-    } finally {
-      setIsRegistering(false);
     }
   };
 
@@ -104,12 +106,12 @@ export const FaceRegistration: React.FC<FaceRegistrationProps> = ({
                   Privacy & Security
                 </h4>
                 <p className="text-xs text-gray-600 dark:text-gray-400">
-                  Your facial data never leaves our secure servers and is never shared with third parties. 
+                  Your facial data never leaves our secure servers and is never shared with third parties.
                   We only store a mathematical representation, not actual photos of your face.
                 </p>
               </div>
 
-              <Button 
+              <Button
                 onClick={handleStartCapture}
                 className="w-full"
                 size="lg"
@@ -154,7 +156,7 @@ export const FaceRegistration: React.FC<FaceRegistrationProps> = ({
                 <CheckCircle className="w-10 h-10 text-green-600" />
               </div>
             </div>
-            
+
             <div>
               <h3 className="text-lg font-semibold mb-2">Registration Complete!</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -174,3 +176,4 @@ export const FaceRegistration: React.FC<FaceRegistrationProps> = ({
     </Card>
   );
 };
+

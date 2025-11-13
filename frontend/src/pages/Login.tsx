@@ -21,19 +21,23 @@ import { useSelector } from "react-redux";
 import { RootState } from "../../Redux/store";
 import { useTranslation } from "react-i18next";
 
-type LoginFormValues = z.infer<typeof loginSchema>;
+const createLoginSchema = (t: any) =>
+  z.object({
+    email: z.string().email({ message: t('auth.invalidEmail') }),
+    password: z
+      .string()
+      .min(6, { message: t('auth.passwordTooShort') }),
+  });
+
+type LoginFormValues = z.infer<ReturnType<typeof createLoginSchema>>;
+
 export default function Login() {
   const navigate = useNavigate();
   const user = useSelector((state: RootState) => state.auth.user);
   const { t } = useTranslation();
   const [faceAuthEmail, setFaceAuthEmail] = React.useState('');
 
-  const loginSchema = z.object({
-    email: z.string().email({ message: t('auth.invalidEmail') }),
-    password: z
-      .string()
-      .min(6, { message: t('auth.passwordTooShort') }),
-  });
+  const loginSchema = createLoginSchema(t);
 
   useEffect(() => {
     if (user) {
@@ -157,7 +161,7 @@ export default function Login() {
                   </div>
                 </div>
                 {faceAuthEmail && (
-                  <FaceAuth 
+                  <FaceAuth
                     mode="login"
                     email={faceAuthEmail}
                     onSuccess={handleFaceLogin}

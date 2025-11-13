@@ -326,5 +326,41 @@
     "initialMessage": "这是我对{{symbol}}的分析：",
     "errorLoading": "加载预测失败",
     "errorSending": "发送消息失败"
+  },
+  "settings": {
+    "title": "安全设置",
+    "description": "管理您的人脸识别身份验证和登录安全",
+    "backButton": "返回",
+    "biometricTitle": "生物识别人脸登录",
+    "biometricDescription": "通过您的人脸进行快速安全的身份验证",
+    "status": {
+      "active": "已启用",
+      "inactive": "已禁用"
+    },
+    "accountInformation": "账户信息",
+    "name": "姓名：",
+    "email": "邮箱：",
+    "howItWorks": "工作原理：",
+    "step1": "您将捕获您的安全人脸配置文件",
+    "step2": "数据被加密并安全存储",
+    "step3": "下次使用您的人脸登录",
+    "step4": "您可以随时更新或禁用",
+    "privacyNote": "隐私声明：",
+    "privacyText": "我们仅存储您脸部的数学表示，而非实际照片。您的数据永远不会与第三方共享。",
+    "registerButton": "注册人脸登录",
+    "updateButton": "更新人脸数据",
+    "disableButton": "禁用人脸登录",
+    "confirmDisableFaceAuth": "您确定要禁用人脸识别身份验证吗？",
+    "faceAuthEnabled": "人脸识别身份验证已成功启用！",
+    "faceAuthDisabled": "人脸识别身份验证已禁用",
+    "errorDisablingFaceAuth": "禁用人脸识别身份验证时出错",
+    "setupMessage": "设置人脸识别身份验证以启用无需输入密码的快速登录。",
+    "activeMessage": "您的人脸识别身份验证已启用，并准备好用于登录。",
+    "canDoList": "您可以做的：",
+    "canDoItem1": "使用人脸识别登录",
+    "canDoItem2": "跳过输入密码",
+    "canDoItem3": "快速安全的身份验证",
+    "tip": "提示：",
+    "tipText": "如需要，您仍然可以使用电子邮件和密码登录。人脸识别身份验证是可选的。"
   }
 }

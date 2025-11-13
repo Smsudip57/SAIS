@@ -2,7 +2,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Camera, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+// @ts-expect-error - face-api doesn't have complete type declarations
 import * as faceapi from '@vladmandic/face-api';
+import { useFaceLoginMutation } from '../../Redux/Api/authApi/Auth';
 
 interface FaceAuthProps {
   mode?: 'login' | 'register';
@@ -11,12 +13,13 @@ interface FaceAuthProps {
   onError?: (error: string) => void;
 }
 
-export const FaceAuth: React.FC<FaceAuthProps> = ({ 
+export const FaceAuth: React.FC<FaceAuthProps> = ({
   mode = 'login',
   email,
   onSuccess,
-  onError 
+  onError
 }) => {
+  const [faceLogin] = useFaceLoginMutation();
   const [isScanning, setIsScanning] = useState(false);
   const [authStatus, setAuthStatus] = useState<'idle' | 'loading' | 'scanning' | 'success' | 'failed'>('idle');
   const [modelsLoaded, setModelsLoaded] = useState(false);
@@ -29,17 +32,21 @@ export const FaceAuth: React.FC<FaceAuthProps> = ({
     const loadModels = async () => {
       try {
         const MODEL_URL = '/models'; // Models should be in public/models folder
+        console.log('🔄 Loading face-api models from:', MODEL_URL);
+
+        // Load all models in parallel
         await Promise.all([
           faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
           faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
           faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
         ]);
+
+        console.log('✅ All face-api models loaded successfully');
         setModelsLoaded(true);
-        console.log('Face-api models loaded successfully');
       } catch (error) {
-        console.error('Error loading face-api models:', error);
-        setErrorMessage('Failed to load face recognition models');
-        setModelsLoaded(true); // Continue anyway for fallback
+        console.error('❌ Error loading face-api models:', error);
+        setErrorMessage('Failed to load face recognition models. Please refresh the page.');
+        // Don't set modelsLoaded to true here - keep button disabled
       }
     };
 
@@ -62,38 +69,70 @@ export const FaceAuth: React.FC<FaceAuthProps> = ({
 
     try {
       // Access camera
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
           width: { ideal: 640 },
           height: { ideal: 480 }
-        } 
+        }
       });
-      
+
       streamRef.current = stream;
-      
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
-        
-        // Wait a moment for video to stabilize
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Detect face and extract descriptor
-        const detection = await faceapi
-          .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
-          .withFaceLandmarks()
-          .withFaceDescriptor();
+
+        // Wait for video to stabilize
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        // Try face detection with retries
+        let detection = null;
+        let attempts = 0;
+        const maxAttempts = 3;
+
+        while (!detection && attempts < maxAttempts) {
+          try {
+            console.log(`Face detection attempt ${attempts + 1}/${maxAttempts}...`);
+
+            detection = await faceapi
+              .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
+              .withFaceLandmarks()
+              .withFaceDescriptor();
+
+            if (detection) {
+              console.log('✅ Face detected successfully');
+              break;
+            } else {
+              console.warn(`⚠️ No face detected, retrying... (attempt ${attempts + 1}/${maxAttempts})`);
+              // Wait before retrying
+              await new Promise(resolve => setTimeout(resolve, 800));
+              attempts++;
+            }
+          } catch (detectionError) {
+            console.error(`Detection error on attempt ${attempts + 1}:`, detectionError);
+            attempts++;
+            if (attempts < maxAttempts) {
+              await new Promise(resolve => setTimeout(resolve, 800));
+            }
+          }
+        }
 
         if (!detection) {
           setAuthStatus('failed');
-          setErrorMessage('No face detected. Please ensure your face is clearly visible.');
+          setErrorMessage(
+            'Could not detect your face. Please ensure:\n' +
+            '• Your face is clearly visible\n' +
+            '• You have good lighting\n' +
+            '• Your face is centered in the camera\n' +
+            '• Try moving closer to the camera'
+          );
           stopCamera();
-          if (onError) onError('No face detected');
+          if (onError) onError('No face detected after multiple attempts');
           return;
         }
 
         // Get face descriptor (128-dimensional array)
-        const faceDescriptor = Array.from(detection.descriptor);
+        const faceDescriptor = Array.from(detection.descriptor) as number[];
 
         if (mode === 'register') {
           // For registration, return the descriptor
@@ -105,37 +144,61 @@ export const FaceAuth: React.FC<FaceAuthProps> = ({
         } else {
           // For login, send to backend for verification
           setAuthStatus('loading');
-          
-          // Call backend API to verify face
-          const response = await fetch('/api/auth/login/face', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, faceDescriptor }),
-            credentials: 'include',
-          });
 
-          const data = await response.json();
+          console.log('📤 Sending face data to backend for verification...');
+          console.log('Email:', email);
+          console.log('Descriptor length:', faceDescriptor.length);
 
-          if (data.success) {
-            setAuthStatus('success');
-            setTimeout(() => {
+          try {
+            // Call backend API to verify face using Redux
+            const response = await faceLogin({ email, faceDescriptor }).unwrap();
+
+            console.log('📊 Backend response:', response);
+
+            if (response.success) {
+              console.log('✅ Face verification successful');
+              setAuthStatus('success');
+              setTimeout(() => {
+                stopCamera();
+                onSuccess();
+              }, 1000);
+            } else {
+              console.error('❌ Face verification failed:', response);
+              setAuthStatus('failed');
+              setErrorMessage(response.message || 'Face verification failed. Please try again or use your password.');
               stopCamera();
-              onSuccess();
-            }, 1000);
-          } else {
+              if (onError) onError(response.message || 'Verification failed');
+            }
+          } catch (error: any) {
+            console.error('❌ Error during face verification request:', error);
+            console.error('Error details:', {
+              message: error?.data?.message || error?.message,
+              status: error?.status,
+              error: error,
+            });
             setAuthStatus('failed');
-            setErrorMessage(data.message || 'Face verification failed');
+            const errorMsg = error?.data?.message || error?.message || 'Face verification failed';
+            setErrorMessage(errorMsg);
             stopCamera();
-            if (onError) onError(data.message || 'Verification failed');
+            if (onError) onError(errorMsg);
           }
         }
       }
     } catch (error: any) {
       console.error('Face authentication error:', error);
       setAuthStatus('failed');
-      setErrorMessage(error.message || 'Camera access denied or face detection failed');
+
+      // Provide specific error messages
+      let errorMsg = error.message || 'Camera access denied or face detection failed';
+      if (error.name === 'NotAllowedError') {
+        errorMsg = 'Camera access was denied. Please allow camera access to use face authentication.';
+      } else if (error.name === 'NotFoundError') {
+        errorMsg = 'No camera found. Please check your device.';
+      }
+
+      setErrorMessage(errorMsg);
       stopCamera();
-      if (onError) onError(error.message || 'Authentication failed');
+      if (onError) onError(errorMsg);
     }
   };
 
@@ -197,7 +260,7 @@ export const FaceAuth: React.FC<FaceAuthProps> = ({
                 <span className="text-sm text-gray-500">Camera Preview</span>
               </div>
             )}
-            
+
             {authStatus === 'scanning' && (
               <div className="absolute inset-0 border-2 border-blue-500 rounded-lg animate-pulse">
                 <div className="absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2 border-blue-500"></div>
@@ -207,7 +270,7 @@ export const FaceAuth: React.FC<FaceAuthProps> = ({
               </div>
             )}
           </div>
-          
+
           <div className="text-center">
             <p className="text-sm font-medium">{getStatusText()}</p>
             {authStatus === 'idle' && (
@@ -218,9 +281,9 @@ export const FaceAuth: React.FC<FaceAuthProps> = ({
           </div>
         </div>
       </Card>
-      
-      <Button 
-        onClick={startFaceAuth} 
+
+      <Button
+        onClick={startFaceAuth}
         disabled={!modelsLoaded || isScanning || authStatus === 'success' || authStatus === 'loading'}
         className="w-full"
       >
@@ -239,13 +302,13 @@ export const FaceAuth: React.FC<FaceAuthProps> = ({
           mode === 'register' ? 'Capture Face' : 'Start Face Authentication'
         )}
       </Button>
-      
+
       {errorMessage && (
         <div className="text-xs text-center text-red-500">
           {errorMessage}
         </div>
       )}
-      
+
       {!modelsLoaded && (
         <div className="text-xs text-center text-gray-500">
           Loading face recognition models...

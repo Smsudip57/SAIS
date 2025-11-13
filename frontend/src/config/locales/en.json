@@ -326,5 +326,41 @@
     "initialMessage": "Here's my analysis of {{symbol}}:",
     "errorLoading": "Failed to load prediction",
     "errorSending": "Failed to send message"
+  },
+  "settings": {
+    "title": "Security Settings",
+    "description": "Manage your face authentication and login security",
+    "backButton": "Back",
+    "biometricTitle": "Biometric Face Login",
+    "biometricDescription": "Quick & secure authentication with your face",
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "accountInformation": "Account Information",
+    "name": "Name:",
+    "email": "Email:",
+    "howItWorks": "How it works:",
+    "step1": "You'll capture a secure face profile",
+    "step2": "Data is encrypted and stored safely",
+    "step3": "Use your face to login next time",
+    "step4": "You can update or disable anytime",
+    "privacyNote": "Privacy Note:",
+    "privacyText": "We store only a mathematical representation of your face, not actual photos. Your data is never shared with third parties.",
+    "registerButton": "Register Face for Login",
+    "updateButton": "Update Face Data",
+    "disableButton": "Disable Face Login",
+    "confirmDisableFaceAuth": "Are you sure you want to disable face authentication?",
+    "faceAuthEnabled": "Face authentication enabled successfully!",
+    "faceAuthDisabled": "Face authentication disabled",
+    "errorDisablingFaceAuth": "An error occurred while disabling face authentication",
+    "setupMessage": "Set up face authentication to enable quick login without typing your password.",
+    "activeMessage": "Your face authentication is active and ready to use for login.",
+    "canDoList": "What you can do:",
+    "canDoItem1": "Login using face recognition",
+    "canDoItem2": "Skip typing your password",
+    "canDoItem3": "Fast and secure authentication",
+    "tip": "Tip:",
+    "tipText": "You can still use your email and password to login if needed. Face authentication is optional."
   }
 }

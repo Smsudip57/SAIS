@@ -76,17 +76,17 @@ router.post("/login", async (req, res) => {
 // Helper function for cosine similarity
 function cosineSimilarity(a, b) {
   if (!a || !b || a.length !== b.length) return 0;
-  
+
   let dotProduct = 0;
   let normA = 0;
   let normB = 0;
-  
+
   for (let i = 0; i < a.length; i++) {
     dotProduct += a[i] * b[i];
     normA += a[i] * a[i];
     normB += b[i] * b[i];
   }
-  
+
   return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
 }
 
@@ -395,7 +395,7 @@ router.get("/getuserinfo", async (req, res) => {
     let access;
     try {
       access = jwt.verify(accessToken, process.env.JWT_SECRET);
-    } catch (error) {}
+    } catch (error) { }
 
     let refresh;
     try {

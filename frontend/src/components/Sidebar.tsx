@@ -19,8 +19,9 @@ export const Sidebar: React.FC = () => {
   const [logoError, setLogoError] = useState(false);
   const [logout] = useLogoutMutation();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
-  
+  const { t, i18n } = useTranslation();
+  const isArabic = i18n.language === 'ar';
+
   const navigation = [
     { name: t('sidebar.dashboard'), href: "/dashboard", icon: LayoutDashboard },
     { name: t('sidebar.trading'), href: "/trading", icon: TrendingUp },
@@ -28,7 +29,7 @@ export const Sidebar: React.FC = () => {
     { name: t('sidebar.analytics'), href: "/analytics", icon: BarChart3 },
     { name: t('sidebar.settings'), href: "/settings", icon: Settings },
   ];
-  
+
   const handleLogout = async () => {
     try {
       await logout(undefined).unwrap();
@@ -39,7 +40,7 @@ export const Sidebar: React.FC = () => {
     }
   };
   return (
-    <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-64 lg:flex-col">
+    <div className={`hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-64 lg:flex-col ${isArabic ? 'lg:right-0' : 'lg:left-0'}`}>
       <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white dark:bg-gray-800 px-6 pb-4 shadow-lg">
         <Link
           to="/"

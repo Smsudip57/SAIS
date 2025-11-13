@@ -52,6 +52,25 @@ export const authApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["User"],
     }),
+    faceLogin: builder.mutation({
+      query: (body) => ({
+        url: "/login/face",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["User"],
+      async onQueryStarted(_, { dispatch, queryFulfilled }) {
+        dispatch(setLoading(true));
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(setUser(data.user));
+        } catch {
+          dispatch(setUser(null));
+        } finally {
+          dispatch(setLoading(false));
+        }
+      },
+    }),
   }),
   overrideExisting: false,
 });
@@ -62,4 +81,5 @@ export const {
   useGoogleGatewayMutation,
   useGetUserInfoQuery,
   useLogoutMutation,
+  useFaceLoginMutation,
 } = authApi;
