@@ -26,6 +26,7 @@ export default function Login() {
   const navigate = useNavigate();
   const user = useSelector((state: RootState) => state.auth.user);
   const { t } = useTranslation();
+  const [faceAuthEmail, setFaceAuthEmail] = React.useState('');
 
   const loginSchema = z.object({
     email: z.string().email({ message: t('auth.invalidEmail') }),
@@ -140,7 +141,37 @@ export default function Login() {
               </form>
             </TabsContent>
             <TabsContent value="face" className="space-y-4">
-              <FaceAuth onSuccess={handleFaceLogin} />
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="face-email">{t('auth.email')}</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="face-email"
+                      type="email"
+                      placeholder={t('auth.emailPlaceholder')}
+                      className="pl-10"
+                      value={faceAuthEmail}
+                      onChange={(e) => setFaceAuthEmail(e.target.value)}
+                    />
+                  </div>
+                </div>
+                {faceAuthEmail && (
+                  <FaceAuth 
+                    mode="login"
+                    email={faceAuthEmail}
+                    onSuccess={handleFaceLogin}
+                    onError={(error) => {
+                      setError("root", { message: error });
+                    }}
+                  />
+                )}
+                {!faceAuthEmail && (
+                  <div className="text-sm text-center text-gray-500 py-8">
+                    Please enter your email address to use face authentication
+                  </div>
+                )}
+              </div>
             </TabsContent>
           </Tabs>
 
