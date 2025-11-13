@@ -22,7 +22,7 @@ const io = setupSocket(server);
 app.use(
   cors({
     origin: [
-      "http://localhost:5173", "https://stockaisarge.com/",
+      "http://localhost:5173", "https://stockaisarge.com",
       process.env.Client_Url
     ],
     credentials: true,
