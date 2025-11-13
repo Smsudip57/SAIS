@@ -8,6 +8,8 @@ import { TrendingUp, TrendingDown, Brain, ChevronDown, ChevronUp, Info, Loader }
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSharedStockStream } from '@/hooks/useSharedStockStream';
 import { useGetStocksPredictionsQuery } from '../../Redux/Api/tradingApi/Trading';
+import { useTranslation } from 'react-i18next';
+import { formatCurrency as formatCurrencyUtil } from '@/config/translations/formatters';
 
 interface StockCardProps {
   symbol?: string;
@@ -18,6 +20,7 @@ interface StockCardProps {
 
 export const StockCard: React.FC<StockCardProps> = ({ symbol, stock, compact = false, onTrade }) => {
   const [showReasoning, setShowReasoning] = useState(false);
+  const { t } = useTranslation();
 
   // Fetch predictions from API - only once when component mounts
   const { data: predictionsData, isLoading: predictionsLoading } = useGetStocksPredictionsQuery(undefined, {
@@ -43,10 +46,7 @@ export const StockCard: React.FC<StockCardProps> = ({ symbol, stock, compact = f
   }, [predictionsData?.data]);
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
+    return formatCurrencyUtil(amount);
   };
 
   const formatVolume = (volume: number) => {
@@ -207,11 +207,11 @@ export const StockCard: React.FC<StockCardProps> = ({ symbol, stock, compact = f
         {!compact && (
           <div className="space-y-2 mb-4">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Volume:</span>
+              <span className="text-gray-600">{t('trading.volume')}:</span>
               <span>{formatVolume(displayData?.volume ?? 0)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Market Cap:</span>
+              <span className="text-gray-600">{t('stockCard.price')}:</span>
               <span>{formatMarketCap(displayData?.marketCap)}</span>
             </div>
           </div>
@@ -316,7 +316,7 @@ export const StockCard: React.FC<StockCardProps> = ({ symbol, stock, compact = f
               className="flex-1 text-green-600 border-green-600 hover:bg-green-50"
               onClick={() => onTrade(displayData.symbol, 'buy')}
             >
-              Buy
+              {t('stockCard.buy')}
             </Button>
             <Button
               size="sm"
@@ -324,7 +324,7 @@ export const StockCard: React.FC<StockCardProps> = ({ symbol, stock, compact = f
               className="flex-1 text-red-600 border-red-600 hover:bg-red-50"
               onClick={() => onTrade(displayData.symbol, 'sell')}
             >
-              Sell
+              {t('stockCard.sell')}
             </Button>
           </div>
         )}
