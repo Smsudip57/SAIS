@@ -1,7 +1,7 @@
 const dotenv = require("dotenv");
 dotenv.config();
 const express = require("express");
-const dbConnect = require("./dbConnect/dbConnect"); 
+const dbConnect = require("./dbConnect/dbConnect");
 const auth = require("./routes/auth");
 const user = require("./routes/user");
 const admin = require("./routes/admin");
@@ -11,11 +11,11 @@ const cors = require("cors");
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-const http = require("http"); 
+const http = require("http");
 const { Server } = require("socket.io");
 const { setupSocket, getIO } = require("./socket/socket");
 
-const server = http.createServer(app); 
+const server = http.createServer(app);
 const io = setupSocket(server);
 
 // Connect to MongoDB
