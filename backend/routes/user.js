@@ -925,6 +925,14 @@ const {
 // Get chat history for a symbol
 router.get("/predictions/chat/:symbol", async (req, res) => {
   try {
+    // ✅ Check if user is authenticated
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized - Please log in to access chat history",
+      });
+    }
+
     const { symbol } = req.params;
     const userId = req.user._id;
 
@@ -948,8 +956,19 @@ router.get("/predictions/chat/:symbol", async (req, res) => {
 // Send chat question (also works via Socket.io)
 router.post("/predictions/chat", async (req, res) => {
   try {
+    // ✅ Check if user is authenticated
+    if (!req.user || !req.user._id) {
+      console.warn("❌ Chat request without authentication");
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized - Please log in to send chat messages",
+      });
+    }
+
     const { symbol, question, language = "en" } = req.body;
     const userId = req.user._id;
+
+    console.log(`💬 Chat request from user ${userId} for ${symbol}`);
 
     if (!symbol || !question) {
       return res.status(400).json({
