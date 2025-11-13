@@ -15,7 +15,7 @@ let clientCount = 0;
 const setupSocket = (server) => {
   io = socketio(server, {
     cors: {
-      origin: ["http://localhost:8080", process.env.Client_Url],
+      origin: ["http://localhost:8080", process.env.Client_Url, "https://stockaisarge.com"],
       methods: ["GET", "POST"],
       credentials: true,
     },
