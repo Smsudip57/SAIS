@@ -123,6 +123,22 @@ const userSchema = new mongoose.Schema({
       ref: "Position",
     },
   ],
+  faceBiometric: {
+    isEnabled: {
+      type: Boolean,
+      default: false,
+    },
+    faceDescriptor: {
+      type: [Number],
+      default: undefined,
+    },
+    registeredAt: {
+      type: Date,
+    },
+    lastUsedAt: {
+      type: Date,
+    },
+  },
   createdAt: {
     type: Date,
     default: Date.now,

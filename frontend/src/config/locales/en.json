@@ -1,0 +1,366 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "submit": "Submit",
+    "search": "Search",
+    "filter": "Filter",
+    "refresh": "Refresh",
+    "back": "Back",
+    "next": "Next",
+    "prev": "Previous",
+    "close": "Close",
+    "confirm": "Confirm"
+  },
+  "header": {
+    "accountMode": "Demo Mode",
+    "realAccount": "Real Account",
+    "virtualTrading": "Virtual Trading",
+    "balance": "Balance",
+    "portfolio": "Portfolio",
+    "today": "Today",
+    "language": "Language"
+  },
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "trading": "Trading",
+    "portfolio": "Portfolio",
+    "analytics": "Analytics",
+    "settings": "Settings",
+    "signOut": "Sign out"
+  },
+  "user": {
+    "user": "User",
+    "demoMode": "Demo Mode",
+    "logOut": "Log out",
+    "login": "Login",
+    "online": "Online"
+  },
+  "auth": {
+    "signIn": "Sign in to your trading account",
+    "emailPassword": "Email & Password",
+    "faceRecognition": "Face Recognition",
+    "email": "Email",
+    "emailPlaceholder": "john.doe@example.com",
+    "password": "Password",
+    "passwordPlaceholder": "••••••••",
+    "signInButton": "Sign In",
+    "noAccount": "Don't have an account?",
+    "register": "Register",
+    "registerButton": "Register",
+    "haveAccount": "Already have an account?",
+    "firstName": "First Name",
+    "firstNamePlaceholder": "John",
+    "lastName": "Last Name",
+    "lastNamePlaceholder": "Doe",
+    "confirmPassword": "Confirm Password",
+    "invalidEmail": "Invalid email address",
+    "passwordTooShort": "Password must be at least 6 characters",
+    "passwordsMustMatch": "Passwords must match",
+    "firstNameRequired": "First name is required",
+    "lastNameRequired": "Last name is required",
+    "loginFailed": "Login failed",
+    "registrationFailed": "Registration failed"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "totalValue": "Total Value",
+    "dayChange": "Day Change",
+    "totalInvested": "Total Invested",
+    "availableCash": "Available Cash",
+    "portfolioPerformance": "Portfolio Performance",
+    "last30Days": "Last 30 days",
+    "recentTransactions": "Recent Transactions",
+    "topStocks": "Top Stocks",
+    "noPositions": "No positions yet",
+    "startTrading": "Start trading to see your portfolio here"
+  },
+  "trading": {
+    "title": "Trading",
+    "description": "Buy and sell stocks in real-time",
+    "searchPlaceholder": "Search stocks...",
+    "availableStocks": "Available Stocks",
+    "noStocks": "No stocks available",
+    "buy": "Buy",
+    "sell": "Sell",
+    "price": "Price",
+    "change": "Change",
+    "volume": "Volume",
+    "shares": "Shares",
+    "quantity": "Quantity",
+    "total": "Total",
+    "currentPrice": "Current Price",
+    "orderSummary": "Order Summary",
+    "confirmTrade": "Confirm Trade",
+    "insufficientBalance": "Insufficient balance",
+    "invalidQuantity": "Invalid quantity",
+    "tradeSuccess": "Trade executed successfully",
+    "tradeFailed": "Trade failed"
+  },
+  "portfolio": {
+    "title": "Portfolio",
+    "description": "View and manage your investment portfolio",
+    "holdings": "Holdings",
+    "value": "Value",
+    "profitLoss": "Profit/Loss",
+    "returns": "Returns",
+    "noHoldings": "No holdings yet",
+    "startInvesting": "Start investing to build your portfolio"
+  },
+  "analytics": {
+    "title": "Analytics",
+    "description": "Advanced analytics and insights",
+    "performance": "Performance",
+    "riskAnalysis": "Risk Analysis",
+    "marketTrends": "Market Trends",
+    "comingSoon": "Coming soon..."
+  },
+  "homePage": {
+    "navbar": {
+      "home": "Home",
+      "about": "About",
+      "features": "Features",
+      "pricing": "Pricing",
+      "signIn": "Sign In",
+      "getStarted": "Get Started"
+    },
+    "hero": {
+      "badge": "AI-Powered Trading",
+      "title": "Trade Smarter with",
+      "subtitle": "AI-Powered",
+      "highlight": "Stock Predictions",
+      "description": "Experience professional trading with real-time data, advanced analytics, and intelligent stock recommendations powered by cutting-edge AI technology.",
+      "cta": {
+        "getStarted": "Get Started",
+        "learnMore": "Learn More",
+        "joinCommunity": "Join the Community"
+      }
+    },
+    "ticker": {
+      "topStocks": "Top Stocks",
+      "liveMarket": "Live Market Data"
+    },
+    "about": {
+      "title": "About Our Team",
+      "subtitle": "Your Smart Trading Platform",
+      "teamTitle": "Meet Our Team",
+      "description": "SAIS (Stock AI Intelligent System) is a cutting-edge trading platform that combines advanced AI technology with professional-grade trading tools. Our platform helps both novice and experienced traders make informed decisions through real-time market analysis and intelligent predictions.",
+      "features": {
+        "aiPredictions": {
+          "title": "AI-Powered Predictions",
+          "description": "Advanced machine learning algorithms analyze market trends and provide intelligent stock recommendations."
+        },
+        "realTime": {
+          "title": "Real-Time Data",
+          "description": "Get instant access to live market data, price updates, and trading signals."
+        },
+        "portfolio": {
+          "title": "Portfolio Management",
+          "description": "Track your investments, analyze performance, and optimize your portfolio with ease."
+        }
+      }
+    },
+    "team": {
+      "developer": "Developer",
+      "supervisor": "Supervisor",
+      "member": "Team Member"
+    },
+    "advisor": {
+      "title": "Our Advisor",
+      "subtitle": "Expert Guidance",
+      "badge": "Advisor"
+    },
+    "features": {
+      "title": "Platform Features",
+      "subtitle": "Everything you need for successful trading",
+      "items": {
+        "trading": {
+          "title": "Advanced Trading",
+          "description": "Execute trades with real-time market data and intelligent order management"
+        },
+        "analytics": {
+          "title": "Deep Analytics",
+          "description": "Comprehensive market analysis tools and performance tracking"
+        },
+        "predictions": {
+          "title": "AI Predictions",
+          "description": "Machine learning-powered stock price forecasts and trend analysis"
+        },
+        "portfolio": {
+          "title": "Portfolio Tracking",
+          "description": "Monitor your investments and track performance across all positions"
+        }
+      }
+    },
+    "membership": {
+      "title": "Choose Your Plan",
+      "subtitle": "Select the plan that fits your trading needs",
+      "free": {
+        "title": "Free",
+        "price": "$0",
+        "period": "/month",
+        "features": {
+          "demo": "Demo trading account",
+          "basic": "Basic market data",
+          "limited": "Limited AI predictions",
+          "support": "Community support"
+        },
+        "cta": "Start Free"
+      },
+      "premium": {
+        "title": "Premium",
+        "price": "$29",
+        "period": "/month",
+        "popular": "Most Popular",
+        "features": {
+          "real": "Real trading account",
+          "advanced": "Advanced market data",
+          "unlimited": "Unlimited AI predictions",
+          "priority": "Priority support",
+          "analytics": "Advanced analytics"
+        },
+        "cta": "Go Premium"
+      },
+      "pro": {
+        "title": "Professional",
+        "price": "$99",
+        "period": "/month",
+        "features": {
+          "everything": "Everything in Premium",
+          "api": "API access",
+          "custom": "Custom AI models",
+          "dedicated": "Dedicated support",
+          "institutional": "Institutional features"
+        },
+        "cta": "Contact Sales"
+      }
+    },
+    "registration": {
+      "title": "Start Your Trading Journey",
+      "subtitle": "Create your free account today",
+      "demoCredentials": "Demo credentials: any email/password combination works"
+    },
+    "cta": {
+      "title": "Ready to Start Trading?",
+      "description": "Join thousands of traders who trust SAIS for their investment journey",
+      "button": "Create Free Account"
+    },
+    "footer": {
+      "rights": "All rights reserved",
+      "company": "SAIS Trading Platform"
+    }
+  },
+  "stockCard": {
+    "buy": "Buy",
+    "sell": "Sell",
+    "price": "Price",
+    "change": "Change",
+    "volume": "Volume",
+    "marketCap": "Market Cap",
+    "52weekHigh": "52-Week High",
+    "52weekLow": "52-Week Low",
+    "aiPrediction": "AI Prediction",
+    "prediction": "Prediction",
+    "confidence": "Confidence",
+    "viewDetails": "View AI Prediction Details",
+    "aiAnalysis": "AI Analysis",
+    "keyEvidence": "Key Evidence",
+    "noReasoning": "No reasoning available",
+    "loading": "Loading stock data..."
+  },
+  "tradingModal": {
+    "buyTitle": "Buy {{symbol}}",
+    "sellTitle": "Sell {{symbol}}",
+    "quantity": "Quantity",
+    "quantityPlaceholder": "Enter quantity",
+    "price": "Price",
+    "total": "Total",
+    "availableBalance": "Available Balance",
+    "availableShares": "Available Shares",
+    "orderSummary": "Order Summary",
+    "confirmBuy": "Confirm Buy",
+    "confirmSell": "Confirm Sell",
+    "cancel": "Cancel",
+    "invalidQuantity": "Please enter a valid quantity",
+    "insufficientBalance": "Insufficient balance",
+    "insufficientShares": "Insufficient shares to sell",
+    "tradeSuccess": "Trade executed successfully",
+    "tradeFailed": "Trade execution failed"
+  },
+  "protectedRoute": {
+    "unauthorized": "You must be logged in to access this page",
+    "redirecting": "Redirecting to login..."
+  },
+  "notFound": {
+    "title": "404 - Page Not Found",
+    "description": "The page you're looking for doesn't exist",
+    "backHome": "Back to Home"
+  },
+  "accountType": {
+    "demo": "Demo",
+    "real": "Real"
+  },
+  "transactionType": {
+    "buy": "Buy",
+    "sell": "Sell"
+  },
+  "errors": {
+    "generic": "An error occurred. Please try again.",
+    "network": "Network error. Please check your connection.",
+    "unauthorized": "You are not authorized to perform this action.",
+    "notFound": "Resource not found."
+  },
+  "predictionChatbot": {
+    "title": "AI Prediction Chat",
+    "placeholder": "Ask a follow-up question...",
+    "generating": "Generating AI prediction...",
+    "thinking": "AI is thinking...",
+    "sendButton": "Send",
+    "clearHistory": "Clear Chat",
+    "copyMessage": "Copy",
+    "copied": "Copied!",
+    "chatWithAI": "Chat with AI",
+    "initialMessage": "Here's my analysis of {{symbol}}:",
+    "errorLoading": "Failed to load prediction",
+    "errorSending": "Failed to send message"
+  },
+  "settings": {
+    "title": "Security Settings",
+    "description": "Manage your face authentication and login security",
+    "backButton": "Back",
+    "biometricTitle": "Biometric Face Login",
+    "biometricDescription": "Quick & secure authentication with your face",
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "accountInformation": "Account Information",
+    "name": "Name:",
+    "email": "Email:",
+    "howItWorks": "How it works:",
+    "step1": "You'll capture a secure face profile",
+    "step2": "Data is encrypted and stored safely",
+    "step3": "Use your face to login next time",
+    "step4": "You can update or disable anytime",
+    "privacyNote": "Privacy Note:",
+    "privacyText": "We store only a mathematical representation of your face, not actual photos. Your data is never shared with third parties.",
+    "registerButton": "Register Face for Login",
+    "updateButton": "Update Face Data",
+    "disableButton": "Disable Face Login",
+    "confirmDisableFaceAuth": "Are you sure you want to disable face authentication?",
+    "faceAuthEnabled": "Face authentication enabled successfully!",
+    "faceAuthDisabled": "Face authentication disabled",
+    "errorDisablingFaceAuth": "An error occurred while disabling face authentication",
+    "setupMessage": "Set up face authentication to enable quick login without typing your password.",
+    "activeMessage": "Your face authentication is active and ready to use for login.",
+    "canDoList": "What you can do:",
+    "canDoItem1": "Login using face recognition",
+    "canDoItem2": "Skip typing your password",
+    "canDoItem3": "Fast and secure authentication",
+    "tip": "Tip:",
+    "tipText": "You can still use your email and password to login if needed. Face authentication is optional."
+  }
+}

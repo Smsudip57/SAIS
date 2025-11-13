@@ -73,6 +73,119 @@ router.post("/login", async (req, res) => {
   }
 });
 
+// Helper function for cosine similarity
+function cosineSimilarity(a, b) {
+  if (!a || !b || a.length !== b.length) return 0;
+
+  let dotProduct = 0;
+  let normA = 0;
+  let normB = 0;
+
+  for (let i = 0; i < a.length; i++) {
+    dotProduct += a[i] * b[i];
+    normA += a[i] * a[i];
+    normB += b[i] * b[i];
+  }
+
+  return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+}
+
+// Face authentication login
+router.post("/login/face", async (req, res) => {
+  try {
+    const { email, faceDescriptor } = req.body;
+
+    if (!email || !faceDescriptor || !Array.isArray(faceDescriptor)) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and valid face descriptor are required.",
+      });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials.",
+      });
+    }
+
+    if (user.isBanned) {
+      return res.status(401).json({
+        success: false,
+        message: "You are banned from using this service.",
+      });
+    }
+
+    // Check if face auth is enabled
+    if (!user.faceBiometric || !user.faceBiometric.isEnabled) {
+      return res.status(400).json({
+        success: false,
+        message: "Face authentication not enabled for this user.",
+      });
+    }
+
+    // Verify face descriptor
+    const similarity = cosineSimilarity(
+      faceDescriptor,
+      user.faceBiometric.faceDescriptor
+    );
+
+    const SIMILARITY_THRESHOLD = 0.6;
+    const isMatch = similarity >= SIMILARITY_THRESHOLD;
+
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: "Face verification failed.",
+        similarity,
+      });
+    }
+
+    // Update last used and last login
+    user.faceBiometric.lastUsedAt = new Date();
+    user.lastLogin = Date.now();
+    await user.save();
+
+    user.password = undefined;
+
+    // Generate tokens
+    const refreshtoken = jwt.sign({ userId: user._id }, JWT_SECRET, {
+      expiresIn: "30d",
+    });
+    res.cookie("refresh", refreshtoken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "None",
+      path: "/",
+    });
+
+    const accesstoken = jwt.sign({ userId: user._id }, JWT_SECRET, {
+      expiresIn: "1h",
+    });
+    res.cookie("access", accesstoken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "None",
+      path: "/",
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Face authentication successful.",
+      user: user,
+      similarity,
+    });
+  } catch (error) {
+    console.error("Error during face login:", error);
+    return res.status(500).json({
+      success: false,
+      message: "An error occurred during face authentication.",
+      error: error.message,
+    });
+  }
+});
+
 router.post("/register", async (req, res) => {
   try {
     const { firstName, lastName, email, password, confirmPassword } = req.body;
@@ -282,7 +395,7 @@ router.get("/getuserinfo", async (req, res) => {
     let access;
     try {
       access = jwt.verify(accessToken, process.env.JWT_SECRET);
-    } catch (error) {}
+    } catch (error) { }
 
     let refresh;
     try {

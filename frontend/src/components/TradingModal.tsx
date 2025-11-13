@@ -10,6 +10,8 @@ import { format } from 'date-fns';
 import { useSharedStockStream } from '@/hooks/useSharedStockStream';
 import { useBuyStockMutation, useSellStockMutation, useGetAccountQuery, useGetPositionsQuery } from '../../Redux/Api/tradingApi/Trading';
 import { useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
+import { formatCurrency as formatCurrencyUtil } from '@/config/translations/formatters';
 
 interface DailyPriceData {
   date: string;
@@ -158,6 +160,7 @@ const OneDayChart = ({ data, isPositive }: { data: DailyPriceData[]; isPositive:
 export const TradingModal: React.FC<TradingModalProps> = ({ symbol, action, onClose }) => {
   const { stockData } = useSharedStockStream(symbol);
   const [shares, setShares] = useState<number>(1);
+  const { t } = useTranslation();
 
   // Redux state
   const currentAccountType = useSelector((state: any) => state.trading.currentAccountType);
@@ -176,16 +179,13 @@ export const TradingModal: React.FC<TradingModalProps> = ({ symbol, action, onCl
   const account = isDemo ? accountData?.accounts?.demo : accountData?.accounts?.real;
   const balance = account?.balance || 0;
 
+  const formatCurrency = (amount: number) => {
+    return formatCurrencyUtil(amount);
+  };
+
   // Get positions from positions API (not from account)
   const positions = positionsData?.positions || [];
   const currentPosition = positions?.find((p: any) => p.symbol === symbol);
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
 
   // Prepare 1-day chart data from historical data
   const dailyChartData = useMemo(() => {
@@ -206,7 +206,7 @@ export const TradingModal: React.FC<TradingModalProps> = ({ symbol, action, onCl
           accountType: currentAccountType,
         }).unwrap();
 
-        toast.success(`Successfully bought ${shares} shares of ${symbol}`);
+        toast.success(t('tradingModal.tradeSuccess'));
         onClose();
       } else {
         const result = await sellStock({
@@ -215,11 +215,11 @@ export const TradingModal: React.FC<TradingModalProps> = ({ symbol, action, onCl
           accountType: currentAccountType,
         }).unwrap();
 
-        toast.success(`Successfully sold ${shares} shares of ${symbol}`);
+        toast.success(t('tradingModal.tradeSuccess'));
         onClose();
       }
     } catch (error: any) {
-      toast.error(`❌ ${error?.data?.message || 'Trade failed'}`);
+      toast.error(error?.data?.message || t('tradingModal.tradeFailed'));
     }
   };
 
@@ -260,7 +260,7 @@ export const TradingModal: React.FC<TradingModalProps> = ({ symbol, action, onCl
               ) : (
                 <TrendingDown className="w-5 h-5 text-red-600" />
               )}
-              <span className="text-xl">{action === 'buy' ? 'Buy' : 'Sell'} {symbol}</span>
+              <span className="text-xl">{action === 'buy' ? t('trading.buy') : t('trading.sell')} {symbol}</span>
             </div>
           </DialogTitle>
         </DialogHeader>

@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Stock } from '@/lib/mockData';
-import { TrendingUp, TrendingDown, Brain, ChevronDown, ChevronUp, Info, Loader } from 'lucide-react';
+import { TrendingUp, TrendingDown, Brain, Loader, MessageSquare } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSharedStockStream } from '@/hooks/useSharedStockStream';
 import { useGetStocksPredictionsQuery } from '../../Redux/Api/tradingApi/Trading';
+import { useTranslation } from 'react-i18next';
+import { formatCurrency as formatCurrencyUtil } from '@/config/translations/formatters';
+import { PredictionChatbot } from './PredictionChatbot';
 
 interface StockCardProps {
   symbol?: string;
@@ -17,7 +19,8 @@ interface StockCardProps {
 }
 
 export const StockCard: React.FC<StockCardProps> = ({ symbol, stock, compact = false, onTrade }) => {
-  const [showReasoning, setShowReasoning] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const { t, i18n } = useTranslation();
 
   // Fetch predictions from API - only once when component mounts
   const { data: predictionsData, isLoading: predictionsLoading } = useGetStocksPredictionsQuery(undefined, {
@@ -36,17 +39,58 @@ export const StockCard: React.FC<StockCardProps> = ({ symbol, stock, compact = f
   const currentData = realTimeData?.currentData;
 
   // Get prediction data for this stock
-  const predictionData = symbol && predictionsData?.data?.[symbol?.toUpperCase()];
+  const rawPredictionData = symbol && predictionsData?.data?.[symbol?.toUpperCase()];
+
+  // Select language-specific prediction (with fallback to legacy format)
+  const predictionData = React.useMemo(() => {
+    if (!rawPredictionData) return null;
+
+    // Map i18next language code to prediction language code
+    // i18next uses 'zh' for Chinese, but we need to handle both 'zh-*' variants
+    const langMap: { [key: string]: 'en' | 'ar' | 'zh' } = {
+      'en': 'en',
+      'ar': 'ar',
+      'zh': 'zh',
+      'zh-CN': 'zh',
+      'zh-TW': 'zh',
+    };
+
+    const predictionLang = langMap[i18n.language] || 'en';
+
+    // If new multi-language format exists, use it
+    if (rawPredictionData.predictions && rawPredictionData.predictions[predictionLang]) {
+      const langPrediction = rawPredictionData.predictions[predictionLang];
+      return {
+        ...rawPredictionData,
+        prediction: langPrediction,
+        displayLanguage: predictionLang
+      };
+    }
+
+    // Fallback: use English if selected language not available
+    if (rawPredictionData.predictions && rawPredictionData.predictions.en) {
+      const engPrediction = rawPredictionData.predictions.en;
+      return {
+        ...rawPredictionData,
+        prediction: engPrediction,
+        displayLanguage: 'en'
+      };
+    }
+
+    // Otherwise, use legacy format (for backward compatibility)
+    return rawPredictionData;
+  }, [rawPredictionData, i18n.language]);
 
   React.useEffect(() => {
     console.log('🔮 Predictions Data:', predictionsData?.data);
-  }, [predictionsData?.data]);
+    console.log('🌍 Current Language:', i18n.language);
+    if (predictionData) {
+      console.log(`📊 ${symbol} Prediction (${predictionData.displayLanguage || 'legacy'}):`, predictionData.prediction);
+    }
+  }, [predictionsData?.data, i18n.language, predictionData, symbol]);
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
+    return formatCurrencyUtil(amount);
   };
 
   const formatVolume = (volume: number) => {
@@ -207,11 +251,11 @@ export const StockCard: React.FC<StockCardProps> = ({ symbol, stock, compact = f
         {!compact && (
           <div className="space-y-2 mb-4">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Volume:</span>
+              <span className="text-gray-600">{t('trading.volume')}:</span>
               <span>{formatVolume(displayData?.volume ?? 0)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Market Cap:</span>
+              <span className="text-gray-600">{t('stockCard.price')}:</span>
               <span>{formatMarketCap(displayData?.marketCap)}</span>
             </div>
           </div>
@@ -222,7 +266,12 @@ export const StockCard: React.FC<StockCardProps> = ({ symbol, stock, compact = f
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center space-x-1">
                 <Brain className="w-4 h-4 text-purple-600" />
-                <span className="text-sm font-medium">AI Prediction</span>
+                <span className="text-sm font-medium">{t('stockCard.aiPrediction')}</span>
+                {predictionData.displayLanguage && predictionData.displayLanguage !== 'en' && (
+                  <Badge variant="secondary" className="ml-2 text-xs">
+                    {predictionData.displayLanguage === 'ar' ? '🇸🇦 AR' : predictionData.displayLanguage === 'zh' ? '🇨🇳 ZH' : '🇺🇸 EN'}
+                  </Badge>
+                )}
               </div>
               {predictionLoading ? (
                 <Loader className="w-4 h-4 animate-spin text-purple-600" />
@@ -275,37 +324,26 @@ export const StockCard: React.FC<StockCardProps> = ({ symbol, stock, compact = f
             </div>
 
             {!compact && predictionData?.prediction?.rationale && (
-              <Collapsible open={showReasoning} onOpenChange={setShowReasoning}>
-                <CollapsibleTrigger asChild>
-                  <Button variant="ghost" size="sm" className="w-full mt-2 p-0 h-auto text-xs">
-                    <div className="flex items-center space-x-1">
-                      <Info className="w-3 h-3" />
-                      <span>View AI Prediction Details</span>
-                      {showReasoning ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                    </div>
-                  </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="mt-2">
-                  <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg text-xs space-y-2">
-                    <div>
-                      <p className="font-medium text-gray-900 dark:text-white mb-1">AI Analysis:</p>
-                      <p className="text-gray-700 dark:text-gray-300">{predictionData?.prediction?.rationale || 'No reasoning available'}</p>
-                    </div>
-                    {/* {predictionData?.prediction?.evidence && Array.isArray(predictionData?.prediction?.evidence) && (
-                      <div>
-                        <p className="font-medium text-gray-900 dark:text-white mb-1">Key Evidence:</p>
-                        <ul className="list-disc list-inside space-y-1 text-gray-700 dark:text-gray-300">
-                          {predictionData?.prediction?.evidence?.map((item: any, idx: number) => (
-                            <li key={idx}>{item?.text || item?.signal || item?.type || 'Evidence point'}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )} */}
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full mt-2"
+                onClick={() => setChatOpen(true)}
+              >
+                <MessageSquare className="w-4 h-4 mr-2" />
+                {t('predictionChatbot.chatWithAI')}
+              </Button>
             )}
           </div>
+        )}
+
+        {/* Prediction Chatbot */}
+        {symbol && (
+          <PredictionChatbot
+            symbol={symbol}
+            open={chatOpen}
+            onOpenChange={setChatOpen}
+          />
         )}
 
         {onTrade && !compact && (
@@ -316,7 +354,7 @@ export const StockCard: React.FC<StockCardProps> = ({ symbol, stock, compact = f
               className="flex-1 text-green-600 border-green-600 hover:bg-green-50"
               onClick={() => onTrade(displayData.symbol, 'buy')}
             >
-              Buy
+              {t('stockCard.buy')}
             </Button>
             <Button
               size="sm"
@@ -324,7 +362,7 @@ export const StockCard: React.FC<StockCardProps> = ({ symbol, stock, compact = f
               className="flex-1 text-red-600 border-red-600 hover:bg-red-50"
               onClick={() => onTrade(displayData.symbol, 'sell')}
             >
-              Sell
+              {t('stockCard.sell')}
             </Button>
           </div>
         )}

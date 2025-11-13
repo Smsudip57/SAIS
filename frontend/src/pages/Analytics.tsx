@@ -8,22 +8,18 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Brain, TrendingUp, TrendingDown, Target, Zap, Info, Eye, Loader } from 'lucide-react';
 import { useGetStocksPredictionsQuery } from '../../Redux/Api/tradingApi/Trading';
 import { StockStreamContext } from '@/contexts/StockStreamContextValue';
+import { useTranslation } from 'react-i18next';
+import { formatCurrency } from '@/config/translations/formatters';
 
 export default function Analytics() {
   const [selectedStock, setSelectedStock] = useState<string | null>(null);
+  const { t, i18n } = useTranslation();
 
   // Fetch stock predictions from backend
   const { data: predictionsData, isLoading: predictionsLoading } = useGetStocksPredictionsQuery(undefined);
 
   // Get real-time stock prices from socket stream
   const stockStreamContext = useContext(StockStreamContext);
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
 
   const getPredictionColor = (value: number | null) => {
     if (!value) return 'text-gray-600';
@@ -43,7 +39,7 @@ export default function Analytics() {
     return 'text-red-600';
   };
 
-  // Process predictions data
+  // Process predictions data with language-specific selection
   const processedPredictions = useMemo(() => {
     const stockData = stockStreamContext?.stockData || {};
 
@@ -54,7 +50,17 @@ export default function Analytics() {
       .map(([symbol, prediction]: [string, any]) => {
         const streamData = stockData[symbol];
         const currentPrice = streamData?.currentData?.price || prediction.currentPrice || 0;
-        const pred = prediction.prediction || {};
+        
+        // Select language-specific prediction (with fallback to legacy format)
+        let pred;
+        if (prediction.predictions) {
+          // New multi-language format
+          pred = prediction.predictions[i18n.language] || prediction.predictions.en || {};
+        } else {
+          // Legacy format
+          pred = prediction.prediction || {};
+        }
+        
         const predictedChange = pred.pred_pct || 0;
         const targetPrice = currentPrice * (1 + predictedChange / 100);
         const confidence = Math.round((pred.confidence || 0) * 100);
@@ -72,7 +78,7 @@ export default function Analytics() {
           },
         };
       });
-  }, [predictionsData?.data, stockStreamContext?.stockData]);
+  }, [predictionsData?.data, stockStreamContext?.stockData, i18n.language]);
 
   const bullishPredictions = processedPredictions.filter(
     (stock) => stock.prediction.predictedChange > 0
@@ -94,15 +100,15 @@ export default function Analytics() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            AI Analytics & Predictions
+            {t('analytics.title')}
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Advanced market analysis powered by artificial intelligence
+            {t('analytics.description')}
           </p>
         </div>
         <Badge variant="outline" className="text-purple-600 border-purple-600">
           <Brain className="w-4 h-4 mr-1" />
-          AI Powered
+          {t('analytics.title')}
         </Badge>
       </div>
 

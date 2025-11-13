@@ -100,7 +100,7 @@ const adminAuth = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.error("Error authenticating user:", error);
+    // console.error("Error authenticating user:", error);
     return res.status(500).json({
       success: false,
       message: "An error occurred while authenticating the user",
@@ -163,7 +163,7 @@ const userAuth = async (req, res, next) => {
     // Always proceed, whether user is authenticated or not
     next();
   } catch (error) {
-    console.error("Error in userAuth middleware:", error);
+    // console.error("Error in userAuth middleware:", error);
     // Even on error, continue without user
     next();
   }

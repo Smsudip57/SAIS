@@ -16,20 +16,18 @@ const predictionSchema = new mongoose.Schema(
             type: Number,
             required: true,
         },
+        // Legacy single prediction field (for backward compatibility)
         prediction: {
             pred_pct: {
                 type: Number,
-                required: true,
             },
             confidence: {
                 type: Number,
-                required: true,
                 min: 0,
                 max: 1,
             },
             rationale: {
                 type: String,
-                required: true,
             },
             evidence: [
                 {
@@ -37,6 +35,66 @@ const predictionSchema = new mongoose.Schema(
                     source_link: String,
                 },
             ],
+        },
+        // Multi-language predictions
+        predictions: {
+            en: {
+                pred_pct: {
+                    type: Number,
+                },
+                confidence: {
+                    type: Number,
+                    min: 0,
+                    max: 1,
+                },
+                rationale: {
+                    type: String,
+                },
+                evidence: [
+                    {
+                        detail: String,
+                        source_link: String,
+                    },
+                ],
+            },
+            ar: {
+                pred_pct: {
+                    type: Number,
+                },
+                confidence: {
+                    type: Number,
+                    min: 0,
+                    max: 1,
+                },
+                rationale: {
+                    type: String,
+                },
+                evidence: [
+                    {
+                        detail: String,
+                        source_link: String,
+                    },
+                ],
+            },
+            zh: {
+                pred_pct: {
+                    type: Number,
+                },
+                confidence: {
+                    type: Number,
+                    min: 0,
+                    max: 1,
+                },
+                rationale: {
+                    type: String,
+                },
+                evidence: [
+                    {
+                        detail: String,
+                        source_link: String,
+                    },
+                ],
+            },
         },
         model: {
             type: String,

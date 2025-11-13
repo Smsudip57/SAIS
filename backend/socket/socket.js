@@ -1,6 +1,13 @@
 const socketio = require("socket.io");
 const mongoose = require("mongoose");
 const { startStockStream, stopStockStream, setIOInstance } = require("../services/stockStream");
+const {
+  generateInitialChatMessage,
+  answerPredictionQuestion,
+  saveChatMessage,
+  getChatHistory,
+} = require("../services/predictionChatService");
+const log = require("../helper/logger");
 
 let io;
 let clientCount = 0;
@@ -145,6 +152,94 @@ const setupSocket = (server) => {
           userId,
         });
       } catch (error) { console.error("Error marking notifications as seen:", error); }
+    });
+
+    // Prediction Chat Events
+    socket.on("predictionChat:start", async ({ symbol, userId, language = "en" }) => {
+      try {
+        log.log(`🔮 Starting prediction chat for ${symbol} in ${language}`);
+        
+        // Emit generating effect
+        socket.emit("prediction:generating", {
+          symbol,
+          message: "Generating AI analysis...",
+        });
+
+        // Get chat history
+        const history = await getChatHistory(userId, symbol);
+        
+        // Simulate loading delay (2-3 seconds)
+        await new Promise(resolve => setTimeout(resolve, 2500));
+
+        // Generate initial message
+        const initialData = await generateInitialChatMessage(symbol, language);
+
+        // Save initial AI message
+        await saveChatMessage(userId, symbol, "ai", initialData.message, language);
+
+        // Emit prediction ready
+        socket.emit("prediction:ready", {
+          symbol,
+          message: initialData.message,
+          prediction: initialData.prediction,
+          currentPrice: initialData.currentPrice,
+          language,
+          history,
+        });
+      } catch (error) {
+        log.error("Error in predictionChat:start:", error);
+        socket.emit("prediction:error", {
+          symbol,
+          error: error.message || "Failed to generate prediction",
+        });
+      }
+    });
+
+    socket.on("chat:question", async ({ symbol, userId, question, language = "en" }) => {
+      try {
+        log.log(`💬 Processing question for ${symbol}: ${question}`);
+
+        // Emit thinking status
+        const questionId = Date.now().toString();
+        socket.emit("chat:response:start", {
+          id: questionId,
+          status: "thinking",
+        });
+
+        // Save user question
+        await saveChatMessage(userId, symbol, "user", question, language);
+
+        // Get chat history for context
+        const history = await getChatHistory(userId, symbol, 10);
+
+        // Get AI response
+        const response = await answerPredictionQuestion(
+          symbol,
+          userId,
+          question,
+          language,
+          history
+        );
+
+        // Save AI response
+        await saveChatMessage(userId, symbol, "ai", response.text, language, response.tokens);
+
+        // Emit complete response
+        socket.emit("chat:response:end", {
+          id: questionId,
+          symbol,
+          response: response.text,
+          tokens: response.tokens,
+          language,
+          timestamp: new Date(),
+        });
+      } catch (error) {
+        log.error("Error in chat:question:", error);
+        socket.emit("chat:response:error", {
+          symbol,
+          error: error.message || "Failed to get AI response",
+        });
+      }
     });
 
     socket.on("disconnect", () => {

@@ -28,10 +28,18 @@ import {
   Lock,
   User,
   ChevronDown,
+  Globe,
 } from "lucide-react";
 import { UserPopover } from "@/components/User";
 import { useSelector } from "react-redux";
 import { RootState } from "../../Redux/store";
+import { useTranslation } from "react-i18next";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const tickerItems = [
   { symbol: "AAPL", price: "145.09", change: -2.45, down: true },
@@ -42,25 +50,38 @@ const tickerItems = [
   { symbol: "MSFT", price: "421.35", change: +3.21, down: false },
 ];
 
-// Zod schema for registration form
-const registerSchema = z
+type RegisterForm = z.infer<ReturnType<typeof createRegisterSchema>>;
+
+const createRegisterSchema = (t: any) => z
   .object({
-    firstName: z.string().min(2, "First name is required"),
-    lastName: z.string().min(2, "Last name is required"),
-    email: z.string().email("Invalid email address"),
-    password: z.string().min(6, "Password must be at least 6 characters"),
+    firstName: z.string().min(2, t('auth.firstNameRequired')),
+    lastName: z.string().min(2, t('auth.lastNameRequired')),
+    email: z.string().email(t('auth.invalidEmail')),
+    password: z.string().min(6, t('auth.passwordTooShort')),
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
+    message: t('auth.passwordsMustMatch'),
     path: ["confirmPassword"],
   });
-
-type RegisterForm = z.infer<typeof registerSchema>;
 
 export default function HomePage() {
   const navigate = useNavigate();
   const [logoError, setLogoError] = useState(false);
+  const { t, i18n } = useTranslation();
+  
+  const registerSchema = createRegisterSchema(t);
+  
+  const changeLanguage = (lng: string) => {
+    i18n.changeLanguage(lng);
+  };
+
+  const languages = [
+    { code: 'en', name: 'English', flag: '🇺🇸' },
+    { code: 'ar', name: 'العربية', flag: '🇸🇦' },
+    { code: 'zh', name: '中文', flag: '🇨🇳' },
+  ];
+  
   const {
     register,
     handleSubmit,
@@ -146,21 +167,46 @@ export default function HomePage() {
                   onClick={() => scrollToSection("about")}
                   className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors"
                 >
-                  About
+                  {t('homePage.navbar.about')}
                 </button>
                 <button
                   onClick={() => scrollToSection("features")}
                   className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors"
                 >
-                  Features
+                  {t('homePage.navbar.features')}
                 </button>
                 <button
                   onClick={() => scrollToSection("membership")}
                   className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors"
                 >
-                  Membership
+                  {t('homePage.navbar.pricing')}
                 </button>
               </nav>
+              
+              {/* Language Switcher */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="gap-2">
+                    <Globe className="w-4 h-4" />
+                    <span className="text-sm">
+                      {languages.find(lang => lang.code === i18n.language)?.flag || '🌐'}
+                    </span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {languages.map((lang) => (
+                    <DropdownMenuItem
+                      key={lang.code}
+                      onClick={() => changeLanguage(lang.code)}
+                      className={`cursor-pointer ${i18n.language === lang.code ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
+                    >
+                      <span className="mr-2">{lang.flag}</span>
+                      <span>{lang.name}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
               {/* User popover */}
               <UserPopover className="border-none shadow-none !bg-transparent" />
             </div>
@@ -181,18 +227,17 @@ export default function HomePage() {
             />
           </div>
           <Badge variant="secondary" className="mb-6 text-sm">
-            Financial Education Platform
+            {t('homePage.hero.badge')}
           </Badge>
           <h2 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
-            Welcome to the{" "}
+            {t('homePage.hero.title')}{" "}
             <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              SAIS Project
-            </span>
+              {t('homePage.hero.subtitle')}
+            </span>{" "}
+            {t('homePage.hero.highlight')}
           </h2>
           <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
-            We empower people to understand and explore the stock market. Our
-            platform combines learning tools and simulations to make investing
-            easier and smarter.
+            {t('homePage.hero.description')}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
@@ -200,7 +245,7 @@ export default function HomePage() {
               onClick={() => scrollToSection("membership")}
               className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
             >
-              Join the Community
+              {t('homePage.hero.cta.joinCommunity')}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
             <Button
@@ -208,7 +253,7 @@ export default function HomePage() {
               variant="outline"
               onClick={() => scrollToSection("features")}
             >
-              Learn More
+              {t('homePage.hero.cta.learnMore')}
             </Button>
           </div>
         </div>
@@ -222,11 +267,10 @@ export default function HomePage() {
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-              About Our Team
+              {t('homePage.about.title')}
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              We are a passionate team of students on a mission: to bring
-              financial literacy and stock market knowledge to everyone.
+              {t('homePage.about.description')}
             </p>
           </div>
 

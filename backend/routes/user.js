@@ -191,6 +191,7 @@ router.get("/predict", async (req, res) => {
         currentPrice: result.currentPrice,
         recentChange: result.recentChange,
         prediction: result.prediction,
+        predictions: result.predictions,  // ✅ Include all 3 languages (en, ar, zh)
         model: result.model,
         timestamp: result.timestamp,
         fromCache: result.fromCache,
@@ -225,6 +226,7 @@ router.get("/stocks/predictions", async (req, res) => {
             currentPrice: prediction.currentPrice,
             recentChange: prediction.recentChange,
             prediction: prediction.prediction,
+            predictions: prediction.predictions,  // ✅ Include all 3 languages (en, ar, zh)
             model: prediction.model,
             timestamp: prediction.timestamp,
             fromCache: prediction.fromCache,
@@ -908,6 +910,300 @@ router.get("/portfolio-history", async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to fetch portfolio history",
+      error: error.message,
+    });
+  }
+});
+
+// Prediction Chat Routes
+const {
+  answerPredictionQuestion,
+  getChatHistory,
+  saveChatMessage,
+} = require("../services/predictionChatService");
+
+// Get chat history for a symbol
+router.get("/predictions/chat/:symbol", async (req, res) => {
+  try {
+    // ✅ Check if user is authenticated
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized - Please log in to access chat history",
+      });
+    }
+
+    const { symbol } = req.params;
+    const userId = req.user._id;
+
+    const history = await getChatHistory(userId, symbol);
+
+    res.status(200).json({
+      success: true,
+      symbol: symbol.toUpperCase(),
+      history,
+    });
+  } catch (error) {
+    console.error("Error fetching chat history:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch chat history",
+      error: error.message,
+    });
+  }
+});
+
+// Send chat question (also works via Socket.io)
+router.post("/predictions/chat", async (req, res) => {
+  try {
+    // ✅ Check if user is authenticated
+    if (!req.user || !req.user._id) {
+      console.warn("❌ Chat request without authentication");
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized - Please log in to send chat messages",
+      });
+    }
+
+    const { symbol, question, language = "en" } = req.body;
+    const userId = req.user._id;
+
+    console.log(`💬 Chat request from user ${userId} for ${symbol}`);
+
+    if (!symbol || !question) {
+      return res.status(400).json({
+        success: false,
+        message: "Symbol and question are required",
+      });
+    }
+
+    // Save user question
+    await saveChatMessage(userId, symbol, "user", question, language);
+
+    // Get chat history for context
+    const history = await getChatHistory(userId, symbol, 10);
+
+    // Get AI response
+    const response = await answerPredictionQuestion(
+      symbol,
+      userId,
+      question,
+      language,
+      history
+    );
+
+    // Save AI response
+    await saveChatMessage(userId, symbol, "ai", response.text, language, response.tokens);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        symbol: symbol.toUpperCase(),
+        response: response.text,
+        sources: response.sources,
+        tokens: response.tokens,
+        language,
+        timestamp: new Date(),
+      },
+    });
+  } catch (error) {
+    console.error("Error processing chat question:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to process question",
+      error: error.message,
+    });
+  }
+});
+
+// Face Biometric Authentication Routes
+
+// Helper function to calculate cosine similarity
+function cosineSimilarity(a, b) {
+  if (!a || !b || a.length !== b.length) return 0;
+  
+  let dotProduct = 0;
+  let normA = 0;
+  let normB = 0;
+  
+  for (let i = 0; i < a.length; i++) {
+    dotProduct += a[i] * b[i];
+    normA += a[i] * a[i];
+    normB += b[i] * b[i];
+  }
+  
+  return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+}
+
+// Register face descriptor for user
+router.post("/face/register", async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { faceDescriptor } = req.body;
+
+    if (!faceDescriptor || !Array.isArray(faceDescriptor)) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid face descriptor is required",
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    user.faceBiometric = {
+      isEnabled: true,
+      faceDescriptor,
+      registeredAt: new Date(),
+      lastUsedAt: null,
+    };
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Face biometric registered successfully",
+      data: {
+        isEnabled: true,
+        registeredAt: user.faceBiometric.registeredAt,
+      },
+    });
+  } catch (error) {
+    console.error("Error registering face biometric:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to register face biometric",
+      error: error.message,
+    });
+  }
+});
+
+// Verify face descriptor
+router.post("/face/verify", async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { faceDescriptor } = req.body;
+
+    if (!faceDescriptor || !Array.isArray(faceDescriptor)) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid face descriptor is required",
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    if (!user.faceBiometric || !user.faceBiometric.isEnabled) {
+      return res.status(400).json({
+        success: false,
+        message: "Face authentication not enabled for this user",
+      });
+    }
+
+    // Calculate similarity
+    const similarity = cosineSimilarity(
+      faceDescriptor,
+      user.faceBiometric.faceDescriptor
+    );
+
+    const SIMILARITY_THRESHOLD = 0.6;
+    const isMatch = similarity >= SIMILARITY_THRESHOLD;
+
+    if (isMatch) {
+      // Update last used timestamp
+      user.faceBiometric.lastUsedAt = new Date();
+      await user.save();
+    }
+
+    res.status(200).json({
+      success: true,
+      verified: isMatch,
+      similarity,
+      message: isMatch ? "Face verified successfully" : "Face verification failed",
+    });
+  } catch (error) {
+    console.error("Error verifying face biometric:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to verify face biometric",
+      error: error.message,
+    });
+  }
+});
+
+// Unregister face authentication
+router.delete("/face/unregister", async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    user.faceBiometric = {
+      isEnabled: false,
+      faceDescriptor: undefined,
+      registeredAt: undefined,
+      lastUsedAt: undefined,
+    };
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Face authentication disabled successfully",
+    });
+  } catch (error) {
+    console.error("Error unregistering face biometric:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to disable face authentication",
+      error: error.message,
+    });
+  }
+});
+
+// Get face auth status
+router.get("/face/status", async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const user = await User.findById(userId).select("faceBiometric");
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        isEnabled: user.faceBiometric?.isEnabled || false,
+        registeredAt: user.faceBiometric?.registeredAt || null,
+        lastUsedAt: user.faceBiometric?.lastUsedAt || null,
+      },
+    });
+  } catch (error) {
+    console.error("Error getting face auth status:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to get face authentication status",
       error: error.message,
     });
   }

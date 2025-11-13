@@ -9,9 +9,12 @@ import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../Redux/store';
 import { useGetPositionsQuery } from '../../Redux/Api/tradingApi/Trading';
 import { StockStreamContext } from '@/contexts/StockStreamContextValue';
+import { useTranslation } from 'react-i18next';
+import { formatCurrency } from '@/config/translations/formatters';
 
 export default function Portfolio() {
   const dispatch = useDispatch();
+  const { t } = useTranslation();
 
   // Get trading state from Redux
   const { accounts, currentAccountType, positions } = useSelector(
@@ -30,13 +33,6 @@ export default function Portfolio() {
   // Get current account based on selected type
   const currentAccount = accounts?.[currentAccountType as keyof typeof accounts];
   const isDemo = currentAccountType === 'demo';
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
 
   // Calculate real-time portfolio metrics using streamed prices
   const portfolioMetrics = useMemo(() => {

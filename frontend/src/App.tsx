@@ -12,15 +12,27 @@ import Dashboard from "./pages/Dashboard";
 import Trading from "./pages/Trading";
 import Portfolio from "./pages/Portfolio";
 import Analytics from "./pages/Analytics";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import HomePage from "./pages/HomePage";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 
 const queryClient = new QueryClient();
 
 const App = () => {
+  const { i18n } = useTranslation();
+
   // Always fetch user info at the app level
   const { isLoading } = useGetUserInfoQuery(undefined);
+
+  // Handle RTL/LTR based on language
+  useEffect(() => {
+    const dir = i18n.language === 'ar' ? 'rtl' : 'ltr';
+    document.documentElement.setAttribute('dir', dir);
+    document.documentElement.setAttribute('lang', i18n.language);
+  }, [i18n.language]);
 
   if (isLoading) {
     // You can customize this loader as you wish
@@ -86,12 +98,7 @@ const App = () => {
                   element={
                     <ProtectedRoute>
                       <Layout>
-                        <div className="text-center py-12">
-                          <h2 className="text-2xl font-bold">Settings</h2>
-                          <p className="text-gray-600 mt-2">
-                            Settings page coming soon...
-                          </p>
-                        </div>
+                        <Settings />
                       </Layout>
                     </ProtectedRoute>
                   }

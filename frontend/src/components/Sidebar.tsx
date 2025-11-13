@@ -12,19 +12,24 @@ import { cn } from "@/lib/utils";
 import { useLogoutMutation } from "../../Redux/Api/authApi/Auth";
 import { clearUser } from "../../Redux/authSlice";
 import { useDispatch } from "react-redux";
-const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Trading", href: "/trading", icon: TrendingUp },
-  { name: "Portfolio", href: "/portfolio", icon: Wallet },
-  { name: "Analytics", href: "/analytics", icon: BarChart3 },
-  { name: "Settings", href: "/settings", icon: Settings },
-];
+import { useTranslation } from "react-i18next";
 
 export const Sidebar: React.FC = () => {
   const location = useLocation();
   const [logoError, setLogoError] = useState(false);
   const [logout] = useLogoutMutation();
   const dispatch = useDispatch();
+  const { t, i18n } = useTranslation();
+  const isArabic = i18n.language === 'ar';
+
+  const navigation = [
+    { name: t('sidebar.dashboard'), href: "/dashboard", icon: LayoutDashboard },
+    { name: t('sidebar.trading'), href: "/trading", icon: TrendingUp },
+    { name: t('sidebar.portfolio'), href: "/portfolio", icon: Wallet },
+    { name: t('sidebar.analytics'), href: "/analytics", icon: BarChart3 },
+    { name: t('sidebar.settings'), href: "/settings", icon: Settings },
+  ];
+
   const handleLogout = async () => {
     try {
       await logout(undefined).unwrap();
@@ -35,7 +40,7 @@ export const Sidebar: React.FC = () => {
     }
   };
   return (
-    <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-64 lg:flex-col">
+    <div className={`hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-64 lg:flex-col ${isArabic ? 'lg:right-0' : 'lg:left-0'}`}>
       <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white dark:bg-gray-800 px-6 pb-4 shadow-lg">
         <Link
           to="/"
@@ -95,7 +100,7 @@ export const Sidebar: React.FC = () => {
             <li className="mt-auto">
               <button className="group -mx-2 flex w-full gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-blue-700 dark:hover:text-blue-400" onClick={handleLogout}>
                 <LogOut className="h-6 w-6 shrink-0 text-gray-400 group-hover:text-blue-700 dark:group-hover:text-blue-400" />
-                Sign out
+                {t('sidebar.signOut')}
               </button>
             </li>
           </ul>

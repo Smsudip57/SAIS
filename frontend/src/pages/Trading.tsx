@@ -9,12 +9,14 @@ import { TradingModal } from '@/components/TradingModal';
 import { Search, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { mockStocks } from '@/lib/mockData';
+import { useTranslation } from 'react-i18next';
 
 // Real stock symbols for real-time data
 const REAL_TIME_SYMBOLS = ["AAPL", "GOOGL", "MSFT", "TSLA", "AMZN", "NVDA"];
 
 export default function Trading() {
   const { stocks } = useTradingContext();
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStock, setSelectedStock] = useState<string | null>(null);
   const [tradeAction, setTradeAction] = useState<'buy' | 'sell'>('buy');
@@ -39,10 +41,10 @@ export default function Trading() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Stock Trading
+            {t('trading.title')}
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Buy and sell stocks with real-time market data
+            {t('trading.description')}
           </p>
         </div>
       </div>
@@ -50,9 +52,9 @@ export default function Trading() {
       {/* Search and Filters */}
       <Card>
         <CardHeader>
-          <CardTitle>Market Search</CardTitle>
+          <CardTitle>{t('common.search')}</CardTitle>
           <CardDescription>
-            Search for stocks to trade
+            {t('trading.searchPlaceholder')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -60,7 +62,7 @@ export default function Trading() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="Search stocks by symbol or name..."
+                placeholder={t('trading.searchPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -68,7 +70,7 @@ export default function Trading() {
             </div>
             <div className="flex items-center space-x-2">
               <Badge variant="secondary">
-                {filteredSymbols.length} stocks
+                {filteredSymbols.length} {t('trading.availableStocks')}
               </Badge>
             </div>
           </div>

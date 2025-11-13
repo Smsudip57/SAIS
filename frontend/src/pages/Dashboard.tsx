@@ -9,9 +9,12 @@ import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../Redux/store';
 import { useGetPositionsQuery } from '../../Redux/Api/tradingApi/Trading';
 import { StockStreamContext } from '@/contexts/StockStreamContextValue';
+import { useTranslation } from 'react-i18next';
+import { formatCurrency } from '@/config/translations/formatters';
 
 export default function Dashboard() {
   const dispatch = useDispatch();
+  const { t } = useTranslation();
 
   // Get trading state from Redux
   const { accounts, currentAccountType, positions } = useSelector(
@@ -40,13 +43,6 @@ export default function Dashboard() {
   // Top stock symbols to display
   const topStockSymbols = ['AAPL', 'GOOGL', 'MSFT', 'TSLA'];
   const isDemo = currentAccountType === 'demo';
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
 
   // Calculate real-time portfolio value and gains using streamed prices
   const portfolioMetrics = useMemo(() => {
@@ -93,14 +89,14 @@ export default function Dashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Trading Dashboard
+            {t('dashboard.title')}
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Welcome back! Here's your portfolio overview.
+            {t('dashboard.totalValue')}
           </p>
         </div>
         <Badge variant={isDemo ? "secondary" : "default"} className="text-sm">
-          {isDemo ? "Demo Trading" : "Live Trading"}
+          {isDemo ? t('header.accountMode') : t('header.realAccount')}
         </Badge>
       </div>
 
@@ -109,7 +105,7 @@ export default function Dashboard() {
         {/* Total Value Card */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Value</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('dashboard.totalValue')}</CardTitle>
             {!currentAccount ? <Skeleton className="h-4 w-4" /> : <DollarSign className="h-4 w-4 text-muted-foreground" />}
           </CardHeader>
           <CardContent>
@@ -121,7 +117,7 @@ export default function Dashboard() {
             ) : (
               <>
                 <div className="text-2xl font-bold">{formatCurrency(totalValue)}</div>
-                <p className="text-xs text-muted-foreground">Balance + Portfolio</p>
+                <p className="text-xs text-muted-foreground">{t('header.balance')} + {t('header.portfolio')}</p>
               </>
             )}
           </CardContent>
@@ -130,7 +126,7 @@ export default function Dashboard() {
         {/* Available Cash Card */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Available Cash</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('dashboard.availableCash')}</CardTitle>
             {!currentAccount ? <Skeleton className="h-4 w-4" /> : <PieChart className="h-4 w-4 text-muted-foreground" />}
           </CardHeader>
           <CardContent>
@@ -142,7 +138,7 @@ export default function Dashboard() {
             ) : (
               <>
                 <div className="text-2xl font-bold">{formatCurrency(currentAccount?.balance ?? 0)}</div>
-                <p className="text-xs text-muted-foreground">Ready to invest</p>
+                <p className="text-xs text-muted-foreground">{t('dashboard.totalInvested')}</p>
               </>
             )}
           </CardContent>
@@ -151,7 +147,7 @@ export default function Dashboard() {
         {/* Portfolio Value Card */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Portfolio Value</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('header.portfolio')}</CardTitle>
             {!currentAccount ? <Skeleton className="h-4 w-4" /> : <Activity className="h-4 w-4 text-muted-foreground" />}
           </CardHeader>
           <CardContent>
@@ -163,7 +159,7 @@ export default function Dashboard() {
             ) : (
               <>
                 <div className="text-2xl font-bold">{formatCurrency(portfolioMetrics.portfolioValue)}</div>
-                <p className="text-xs text-muted-foreground">{positions?.length ?? 0} positions</p>
+                <p className="text-xs text-muted-foreground">{positions?.length ?? 0} {t('portfolio.holdings')}</p>
               </>
             )}
           </CardContent>
@@ -172,7 +168,7 @@ export default function Dashboard() {
         {/* Today's Change Card */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Today's Change</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('dashboard.dayChange')}</CardTitle>
             {!currentAccount ? (
               <Skeleton className="h-4 w-4" />
             ) : (currentAccount?.dayChange ?? 0) >= 0 ? (
@@ -206,8 +202,8 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Portfolio Performance</CardTitle>
-            <CardDescription>Your portfolio value over time</CardDescription>
+            <CardTitle>{t('dashboard.portfolioPerformance')}</CardTitle>
+            <CardDescription>{t('dashboard.last30Days')}</CardDescription>
           </CardHeader>
           <CardContent>
             {!currentAccount ? (
@@ -222,8 +218,8 @@ export default function Dashboard() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Current Positions</CardTitle>
-            <CardDescription>Your active stock holdings</CardDescription>
+            <CardTitle>{t('portfolio.holdings')}</CardTitle>
+            <CardDescription>{t('portfolio.description')}</CardDescription>
           </CardHeader>
           <CardContent>
             {positionsLoading || !currentAccount ? (
@@ -243,7 +239,7 @@ export default function Dashboard() {
               </div>
             ) : !positions || positions.length === 0 ? (
               <div className="text-center py-6 text-gray-500">
-                No positions yet. Start trading to see your holdings here.
+                {t('dashboard.noPositions')}
               </div>
             ) : (
               <div className="space-y-3">
