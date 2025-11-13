@@ -20,6 +20,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "../../Redux/store";
 import { useLogoutMutation } from "../../Redux/Api/authApi/Auth";
 import { clearUser } from "../../Redux/authSlice";
+import { useTranslation } from "react-i18next";
 
 interface UserPopoverProps {
   isDemo?: boolean;
@@ -33,6 +34,7 @@ export const UserPopover: React.FC<UserPopoverProps> = ({
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { t } = useTranslation();
 
   // Redux state
   const user = useSelector((state: RootState) => state.auth.user);
@@ -42,11 +44,11 @@ export const UserPopover: React.FC<UserPopoverProps> = ({
   const [logout] = useLogoutMutation();
 
   const navOptions = [
-    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Trading", href: "/trading", icon: TrendingUp },
-    { name: "Portfolio", href: "/portfolio", icon: Wallet },
-    { name: "Analytics", href: "/analytics", icon: BarChart3 },
-    { name: "Settings", href: "/settings", icon: Settings },
+    { name: t('sidebar.dashboard'), href: "/dashboard", icon: LayoutDashboard },
+    { name: t('sidebar.trading'), href: "/trading", icon: TrendingUp },
+    { name: t('sidebar.portfolio'), href: "/portfolio", icon: Wallet },
+    { name: t('sidebar.analytics'), href: "/analytics", icon: BarChart3 },
+    { name: t('sidebar.settings'), href: "/settings", icon: Settings },
   ];
 
   const handleLogout = async () => {
@@ -90,7 +92,7 @@ export const UserPopover: React.FC<UserPopoverProps> = ({
             className="flex items-center space-x-3 px-3 py-1 cursor-pointer rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors text-sm font-medium"
             onClick={() => navigate("/login")}
           >
-            Login
+            {t('user.login')}
           </button>
         )}
       </PopoverTrigger>
@@ -111,7 +113,7 @@ export const UserPopover: React.FC<UserPopoverProps> = ({
             </div>
             <span
               className="absolute bottom-0 right-0 block w-4 h-4 rounded-full bg-green-400 ring-2 ring-white dark:ring-gray-900 border-2 border-white dark:border-gray-900"
-              title="Online"
+              title={t('user.online')}
             />
           </div>
           <div className="text-center mb-2">
@@ -132,11 +134,11 @@ export const UserPopover: React.FC<UserPopoverProps> = ({
           </div>
           <div className="flex items-center justify-center gap-2 mb-4">
             <span className="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900/40 px-2 py-0.5 text-xs font-medium text-blue-700 dark:text-blue-300">
-              User
+              {t('user.user')}
             </span>
             {isDemo && (
               <span className="inline-flex items-center rounded-full bg-green-100 dark:bg-green-900 px-2 py-0.5 text-xs font-medium text-green-800 dark:text-green-200">
-                Demo Mode
+                {t('user.demoMode')}
               </span>
             )}
           </div>
@@ -175,7 +177,7 @@ export const UserPopover: React.FC<UserPopoverProps> = ({
             className="w-full px-2 py-1 bg-transparent text-gray-500 dark:text-gray-400 text-sm font-medium flex items-center justify-center gap-2 hover:underline focus:outline-none"
           >
             <LogOut className="w-4 h-4" />
-            Log out
+            {t('user.logOut')}
           </button>
         </div>{" "}
         {/* Close main content div */}

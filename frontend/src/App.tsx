@@ -15,12 +15,23 @@ import Analytics from "./pages/Analytics";
 import NotFound from "./pages/NotFound";
 import HomePage from "./pages/HomePage";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 
 const queryClient = new QueryClient();
 
 const App = () => {
+  const { i18n } = useTranslation();
+  
   // Always fetch user info at the app level
   const { isLoading } = useGetUserInfoQuery(undefined);
+
+  // Handle RTL/LTR based on language
+  useEffect(() => {
+    const dir = i18n.language === 'ar' ? 'rtl' : 'ltr';
+    document.documentElement.setAttribute('dir', dir);
+    document.documentElement.setAttribute('lang', i18n.language);
+  }, [i18n.language]);
 
   if (isLoading) {
     // You can customize this loader as you wish
