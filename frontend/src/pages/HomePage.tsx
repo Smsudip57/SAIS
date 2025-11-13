@@ -227,18 +227,17 @@ export default function HomePage() {
             />
           </div>
           <Badge variant="secondary" className="mb-6 text-sm">
-            Financial Education Platform
+            {t('homePage.hero.badge')}
           </Badge>
           <h2 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
-            Welcome to the{" "}
+            {t('homePage.hero.title')}{" "}
             <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              SAIS Project
-            </span>
+              {t('homePage.hero.subtitle')}
+            </span>{" "}
+            {t('homePage.hero.highlight')}
           </h2>
           <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
-            We empower people to understand and explore the stock market. Our
-            platform combines learning tools and simulations to make investing
-            easier and smarter.
+            {t('homePage.hero.description')}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
@@ -246,7 +245,7 @@ export default function HomePage() {
               onClick={() => scrollToSection("membership")}
               className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
             >
-              Join the Community
+              {t('homePage.hero.cta.joinCommunity')}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
             <Button
@@ -254,7 +253,7 @@ export default function HomePage() {
               variant="outline"
               onClick={() => scrollToSection("features")}
             >
-              Learn More
+              {t('homePage.hero.cta.learnMore')}
             </Button>
           </div>
         </div>
@@ -268,11 +267,10 @@ export default function HomePage() {
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-              About Our Team
+              {t('homePage.about.title')}
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              We are a passionate team of students on a mission: to bring
-              financial literacy and stock market knowledge to everyone.
+              {t('homePage.about.description')}
             </p>
           </div>
 
