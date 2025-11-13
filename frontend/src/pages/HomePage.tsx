@@ -32,6 +32,7 @@ import {
 import { UserPopover } from "@/components/User";
 import { useSelector } from "react-redux";
 import { RootState } from "../../Redux/store";
+import { useTranslation } from "react-i18next";
 
 const tickerItems = [
   { symbol: "AAPL", price: "145.09", change: -2.45, down: true },
@@ -42,25 +43,28 @@ const tickerItems = [
   { symbol: "MSFT", price: "421.35", change: +3.21, down: false },
 ];
 
-// Zod schema for registration form
-const registerSchema = z
+type RegisterForm = z.infer<ReturnType<typeof createRegisterSchema>>;
+
+const createRegisterSchema = (t: any) => z
   .object({
-    firstName: z.string().min(2, "First name is required"),
-    lastName: z.string().min(2, "Last name is required"),
-    email: z.string().email("Invalid email address"),
-    password: z.string().min(6, "Password must be at least 6 characters"),
+    firstName: z.string().min(2, t('auth.firstNameRequired')),
+    lastName: z.string().min(2, t('auth.lastNameRequired')),
+    email: z.string().email(t('auth.invalidEmail')),
+    password: z.string().min(6, t('auth.passwordTooShort')),
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
+    message: t('auth.passwordsMustMatch'),
     path: ["confirmPassword"],
   });
-
-type RegisterForm = z.infer<typeof registerSchema>;
 
 export default function HomePage() {
   const navigate = useNavigate();
   const [logoError, setLogoError] = useState(false);
+  const { t } = useTranslation();
+  
+  const registerSchema = createRegisterSchema(t);
+  
   const {
     register,
     handleSubmit,
