@@ -33,7 +33,8 @@ export const usePredictionChat = ({
 
   // Initialize socket connection
   useEffect(() => {
-    const socketUrl = import.meta.env.VITE_BASE_URL || 'http://localhost:3001';
+    const baseUrl = import.meta.env.VITE_BASE_URL || 'http://localhost:3001';
+    const socketUrl = baseUrl.replace(/\/api\/?$/, '') 
     const newSocket = io(socketUrl, {
       transports: ['websocket', 'polling'],
       reconnection: true,
