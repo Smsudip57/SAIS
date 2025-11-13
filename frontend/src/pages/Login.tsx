@@ -19,18 +19,20 @@ import { TrendingUp, Mail, Lock } from "lucide-react";
 import { useLoginMutation } from "../../Redux/Api/authApi/Auth";
 import { useSelector } from "react-redux";
 import { RootState } from "../../Redux/store";
-
-const loginSchema = z.object({
-  email: z.string().email({ message: "Invalid email address" }),
-  password: z
-    .string()
-    .min(6, { message: "Password must be at least 6 characters" }),
-});
+import { useTranslation } from "react-i18next";
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 export default function Login() {
   const navigate = useNavigate();
   const user = useSelector((state: RootState) => state.auth.user);
+  const { t } = useTranslation();
+
+  const loginSchema = z.object({
+    email: z.string().email({ message: t('auth.invalidEmail') }),
+    password: z
+      .string()
+      .min(6, { message: t('auth.passwordTooShort') }),
+  });
 
   useEffect(() => {
     if (user) {
@@ -55,7 +57,7 @@ export default function Login() {
       navigate("/dashboard");
     } catch (err: any) {
       // Show API error on form
-      setError("root", { message: err?.data?.message || "Login failed" });
+      setError("root", { message: err?.data?.message || t('auth.loginFailed') });
     }
   };
   const handleFaceLogin = () => {
@@ -73,25 +75,25 @@ export default function Login() {
             </div>
           </div>
           <CardTitle className="text-2xl font-bold">SAIS</CardTitle>
-          <CardDescription>Sign in to your trading account</CardDescription>
+          <CardDescription>{t('auth.signIn')}</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="traditional" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="traditional">Email & Password</TabsTrigger>
-              <TabsTrigger value="face">Face Recognition</TabsTrigger>
+              <TabsTrigger value="traditional">{t('auth.emailPassword')}</TabsTrigger>
+              <TabsTrigger value="face">{t('auth.faceRecognition')}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="traditional" className="space-y-4">
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">{t('auth.email')}</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <Input
                       id="email"
                       type="email"
-                      placeholder="john.doe@example.com"
+                      placeholder={t('auth.emailPlaceholder')}
                       className="pl-10"
                       {...register("email")}
                       disabled={isLoading}
@@ -104,13 +106,13 @@ export default function Login() {
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password">{t('auth.password')}</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <Input
                       id="password"
                       type="password"
-                      placeholder="Enter your password"
+                      placeholder={t('auth.passwordPlaceholder')}
                       className="pl-10"
                       {...register("password")}
                       disabled={isLoading}
@@ -129,11 +131,11 @@ export default function Login() {
                 )}
                 {error && !errors.root && (
                   <p className="text-xs text-red-500 mt-1">
-                    {(error as any)?.data?.message || "Login failed"}
+                    {(error as any)?.data?.message || t('auth.loginFailed')}
                   </p>
                 )}
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Signing In..." : "Sign In"}
+                  {isLoading ? t('common.loading') : t('auth.signInButton')}
                 </Button>
               </form>
             </TabsContent>
