@@ -119,22 +119,34 @@
     "comingSoon": "Coming soon..."
   },
   "homePage": {
+    "navbar": {
+      "home": "Home",
+      "about": "About",
+      "features": "Features",
+      "pricing": "Pricing",
+      "signIn": "Sign In",
+      "getStarted": "Get Started"
+    },
     "hero": {
+      "badge": "AI-Powered Trading",
       "title": "Trade Smarter with",
       "subtitle": "AI-Powered",
       "highlight": "Stock Predictions",
       "description": "Experience professional trading with real-time data, advanced analytics, and intelligent stock recommendations powered by cutting-edge AI technology.",
       "cta": {
         "getStarted": "Get Started",
-        "learnMore": "Learn More"
+        "learnMore": "Learn More",
+        "joinCommunity": "Join the Community"
       }
     },
     "ticker": {
-      "topStocks": "Top Stocks"
+      "topStocks": "Top Stocks",
+      "liveMarket": "Live Market Data"
     },
     "about": {
-      "title": "About SAIS",
+      "title": "About Our Team",
       "subtitle": "Your Smart Trading Platform",
+      "teamTitle": "Meet Our Team",
       "description": "SAIS (Stock AI Intelligent System) is a cutting-edge trading platform that combines advanced AI technology with professional-grade trading tools. Our platform helps both novice and experienced traders make informed decisions through real-time market analysis and intelligent predictions.",
       "features": {
         "aiPredictions": {
@@ -151,8 +163,19 @@
         }
       }
     },
+    "team": {
+      "developer": "Developer",
+      "supervisor": "Supervisor",
+      "member": "Team Member"
+    },
+    "advisor": {
+      "title": "Our Advisor",
+      "subtitle": "Expert Guidance",
+      "badge": "Advisor"
+    },
     "features": {
       "title": "Platform Features",
+      "subtitle": "Everything you need for successful trading",
       "items": {
         "trading": {
           "title": "Advanced Trading",
@@ -174,6 +197,7 @@
     },
     "membership": {
       "title": "Choose Your Plan",
+      "subtitle": "Select the plan that fits your trading needs",
       "free": {
         "title": "Free",
         "price": "$0",
@@ -214,10 +238,19 @@
         "cta": "Contact Sales"
       }
     },
+    "registration": {
+      "title": "Start Your Trading Journey",
+      "subtitle": "Create your free account today",
+      "demoCredentials": "Demo credentials: any email/password combination works"
+    },
     "cta": {
       "title": "Ready to Start Trading?",
       "description": "Join thousands of traders who trust SAIS for their investment journey",
       "button": "Create Free Account"
+    },
+    "footer": {
+      "rights": "All rights reserved",
+      "company": "SAIS Trading Platform"
     }
   },
   "stockCard": {
@@ -225,7 +258,18 @@
     "sell": "Sell",
     "price": "Price",
     "change": "Change",
-    "volume": "Volume"
+    "volume": "Volume",
+    "marketCap": "Market Cap",
+    "52weekHigh": "52-Week High",
+    "52weekLow": "52-Week Low",
+    "aiPrediction": "AI Prediction",
+    "prediction": "Prediction",
+    "confidence": "Confidence",
+    "viewDetails": "View AI Prediction Details",
+    "aiAnalysis": "AI Analysis",
+    "keyEvidence": "Key Evidence",
+    "noReasoning": "No reasoning available",
+    "loading": "Loading stock data..."
   },
   "tradingModal": {
     "buyTitle": "Buy {{symbol}}",

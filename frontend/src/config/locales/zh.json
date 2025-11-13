@@ -126,14 +126,17 @@
       "description": "体验专业交易，配备实时数据、高级分析和由尖端AI技术驱动的智能股票推荐。",
       "cta": {
         "getStarted": "立即开始",
-        "learnMore": "了解更多"
-      }
+        "learnMore": "了解更多",
+        "joinCommunity": "加入社区"
+      },
+      "badge": "AI驱动交易"
     },
     "ticker": {
-      "topStocks": "热门股票"
+      "topStocks": "热门股票",
+      "liveMarket": "实时市场数据"
     },
     "about": {
-      "title": "关于SAIS",
+      "title": "关于我们的团队",
       "subtitle": "您的智能交易平台",
       "description": "SAIS（股票AI智能系统）是一个尖端的交易平台，结合了先进的AI技术和专业级交易工具。我们的平台通过实时市场分析和智能预测，帮助新手和经验丰富的交易者做出明智的决策。",
       "features": {
@@ -149,7 +152,8 @@
           "title": "投资组合管理",
           "description": "轻松跟踪您的投资、分析表现和优化您的投资组合。"
         }
-      }
+      },
+      "teamTitle": "认识我们的团队"
     },
     "features": {
       "title": "平台特性",
@@ -170,7 +174,8 @@
           "title": "投资组合追踪",
           "description": "监控您的投资并跟踪所有持仓的表现"
         }
-      }
+      },
+      "subtitle": "成功交易所需的一切"
     },
     "membership": {
       "title": "选择您的方案",
@@ -212,12 +217,40 @@
           "institutional": "机构功能"
         },
         "cta": "联系销售"
-      }
+      },
+      "subtitle": "选择适合您交易需求的计划"
     },
     "cta": {
       "title": "准备开始交易了吗？",
       "description": "加入数千名信任SAIS的交易者，开启您的投资之旅",
       "button": "创建免费账户"
+    },
+    "navbar": {
+      "home": "首页",
+      "about": "关于",
+      "features": "功能",
+      "pricing": "价格",
+      "signIn": "登录",
+      "getStarted": "立即开始"
+    },
+    "team": {
+      "developer": "开发人员",
+      "supervisor": "主管",
+      "member": "团队成员"
+    },
+    "advisor": {
+      "title": "我们的顾问",
+      "subtitle": "专家指导",
+      "badge": "顾问"
+    },
+    "registration": {
+      "title": "开始您的交易之旅",
+      "subtitle": "今天创建您的免费账户",
+      "demoCredentials": "演示凭据：任何电子邮件/密码组合都有效"
+    },
+    "footer": {
+      "rights": "版权所有",
+      "company": "SAIS交易平台"
     }
   },
   "stockCard": {
@@ -225,7 +258,18 @@
     "sell": "卖出",
     "price": "价格",
     "change": "涨跌",
-    "volume": "成交量"
+    "volume": "成交量",
+    "marketCap": "市值",
+    "52weekHigh": "52周最高",
+    "52weekLow": "52周最低",
+    "aiPrediction": "AI预测",
+    "prediction": "预测",
+    "confidence": "置信度",
+    "viewDetails": "查看AI预测详情",
+    "aiAnalysis": "AI分析",
+    "keyEvidence": "关键证据",
+    "noReasoning": "无推理信息",
+    "loading": "加载股票数据..."
   },
   "tradingModal": {
     "buyTitle": "买入 {{symbol}}",

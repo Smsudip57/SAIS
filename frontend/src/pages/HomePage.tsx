@@ -28,11 +28,18 @@ import {
   Lock,
   User,
   ChevronDown,
+  Globe,
 } from "lucide-react";
 import { UserPopover } from "@/components/User";
 import { useSelector } from "react-redux";
 import { RootState } from "../../Redux/store";
 import { useTranslation } from "react-i18next";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const tickerItems = [
   { symbol: "AAPL", price: "145.09", change: -2.45, down: true },
@@ -61,9 +68,19 @@ const createRegisterSchema = (t: any) => z
 export default function HomePage() {
   const navigate = useNavigate();
   const [logoError, setLogoError] = useState(false);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   
   const registerSchema = createRegisterSchema(t);
+  
+  const changeLanguage = (lng: string) => {
+    i18n.changeLanguage(lng);
+  };
+
+  const languages = [
+    { code: 'en', name: 'English', flag: '🇺🇸' },
+    { code: 'ar', name: 'العربية', flag: '🇸🇦' },
+    { code: 'zh', name: '中文', flag: '🇨🇳' },
+  ];
   
   const {
     register,
@@ -150,21 +167,46 @@ export default function HomePage() {
                   onClick={() => scrollToSection("about")}
                   className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors"
                 >
-                  About
+                  {t('homePage.navbar.about')}
                 </button>
                 <button
                   onClick={() => scrollToSection("features")}
                   className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors"
                 >
-                  Features
+                  {t('homePage.navbar.features')}
                 </button>
                 <button
                   onClick={() => scrollToSection("membership")}
                   className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors"
                 >
-                  Membership
+                  {t('homePage.navbar.pricing')}
                 </button>
               </nav>
+              
+              {/* Language Switcher */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="gap-2">
+                    <Globe className="w-4 h-4" />
+                    <span className="text-sm">
+                      {languages.find(lang => lang.code === i18n.language)?.flag || '🌐'}
+                    </span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {languages.map((lang) => (
+                    <DropdownMenuItem
+                      key={lang.code}
+                      onClick={() => changeLanguage(lang.code)}
+                      className={`cursor-pointer ${i18n.language === lang.code ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
+                    >
+                      <span className="mr-2">{lang.flag}</span>
+                      <span>{lang.name}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
               {/* User popover */}
               <UserPopover className="border-none shadow-none !bg-transparent" />
             </div>
