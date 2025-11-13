@@ -45,22 +45,49 @@ export const StockCard: React.FC<StockCardProps> = ({ symbol, stock, compact = f
   const predictionData = React.useMemo(() => {
     if (!rawPredictionData) return null;
     
+    // Map i18next language code to prediction language code
+    // i18next uses 'zh' for Chinese, but we need to handle both 'zh-*' variants
+    const langMap: { [key: string]: 'en' | 'ar' | 'zh' } = {
+      'en': 'en',
+      'ar': 'ar',
+      'zh': 'zh',
+      'zh-CN': 'zh',
+      'zh-TW': 'zh',
+    };
+    
+    const predictionLang = langMap[i18n.language] || 'en';
+    
     // If new multi-language format exists, use it
-    if (rawPredictionData.predictions) {
-      const langPrediction = rawPredictionData.predictions[i18n.language] || rawPredictionData.predictions.en;
+    if (rawPredictionData.predictions && rawPredictionData.predictions[predictionLang]) {
+      const langPrediction = rawPredictionData.predictions[predictionLang];
       return {
         ...rawPredictionData,
-        prediction: langPrediction
+        prediction: langPrediction,
+        displayLanguage: predictionLang
       };
     }
     
-    // Otherwise, use legacy format
+    // Fallback: use English if selected language not available
+    if (rawPredictionData.predictions && rawPredictionData.predictions.en) {
+      const engPrediction = rawPredictionData.predictions.en;
+      return {
+        ...rawPredictionData,
+        prediction: engPrediction,
+        displayLanguage: 'en'
+      };
+    }
+    
+    // Otherwise, use legacy format (for backward compatibility)
     return rawPredictionData;
   }, [rawPredictionData, i18n.language]);
 
   React.useEffect(() => {
     console.log('🔮 Predictions Data:', predictionsData?.data);
-  }, [predictionsData?.data]);
+    console.log('🌍 Current Language:', i18n.language);
+    if (predictionData) {
+      console.log(`📊 ${symbol} Prediction (${predictionData.displayLanguage || 'legacy'}):`, predictionData.prediction);
+    }
+  }, [predictionsData?.data, i18n.language, predictionData, symbol]);
 
   const formatCurrency = (amount: number) => {
     return formatCurrencyUtil(amount);
@@ -239,7 +266,12 @@ export const StockCard: React.FC<StockCardProps> = ({ symbol, stock, compact = f
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center space-x-1">
                 <Brain className="w-4 h-4 text-purple-600" />
-                <span className="text-sm font-medium">AI Prediction</span>
+                <span className="text-sm font-medium">{t('stockCard.aiPrediction')}</span>
+                {predictionData.displayLanguage && predictionData.displayLanguage !== 'en' && (
+                  <Badge variant="secondary" className="ml-2 text-xs">
+                    {predictionData.displayLanguage === 'ar' ? '🇸🇦 AR' : predictionData.displayLanguage === 'zh' ? '🇨🇳 ZH' : '🇺🇸 EN'}
+                  </Badge>
+                )}
               </div>
               {predictionLoading ? (
                 <Loader className="w-4 h-4 animate-spin text-purple-600" />
@@ -304,9 +336,18 @@ export const StockCard: React.FC<StockCardProps> = ({ symbol, stock, compact = f
                 </CollapsibleTrigger>
                 <CollapsibleContent className="mt-2">
                   <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg text-xs space-y-2">
+                    {predictionData.displayLanguage && (
+                      <div className="text-xs text-gray-500 mb-2">
+                        {
+                          predictionData.displayLanguage === 'ar' ? 'العربية (Arabic)' :
+                          predictionData.displayLanguage === 'zh' ? '中文 (Chinese)' :
+                          'English'
+                        }
+                      </div>
+                    )}
                     <div>
-                      <p className="font-medium text-gray-900 dark:text-white mb-1">AI Analysis:</p>
-                      <p className="text-gray-700 dark:text-gray-300">{predictionData?.prediction?.rationale || 'No reasoning available'}</p>
+                      <p className="font-medium text-gray-900 dark:text-white mb-1">{t('stockCard.aiAnalysis')}:</p>
+                      <p className="text-gray-700 dark:text-gray-300">{predictionData?.prediction?.rationale || t('stockCard.noReasoning')}</p>
                     </div>
                     {/* {predictionData?.prediction?.evidence && Array.isArray(predictionData?.prediction?.evidence) && (
                       <div>

@@ -191,6 +191,7 @@ router.get("/predict", async (req, res) => {
         currentPrice: result.currentPrice,
         recentChange: result.recentChange,
         prediction: result.prediction,
+        predictions: result.predictions,  // ✅ Include all 3 languages (en, ar, zh)
         model: result.model,
         timestamp: result.timestamp,
         fromCache: result.fromCache,
@@ -225,6 +226,7 @@ router.get("/stocks/predictions", async (req, res) => {
             currentPrice: prediction.currentPrice,
             recentChange: prediction.recentChange,
             prediction: prediction.prediction,
+            predictions: prediction.predictions,  // ✅ Include all 3 languages (en, ar, zh)
             model: prediction.model,
             timestamp: prediction.timestamp,
             fromCache: prediction.fromCache,
