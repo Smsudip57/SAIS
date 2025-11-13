@@ -40,11 +40,11 @@ export const StockCard: React.FC<StockCardProps> = ({ symbol, stock, compact = f
 
   // Get prediction data for this stock
   const rawPredictionData = symbol && predictionsData?.data?.[symbol?.toUpperCase()];
-  
+
   // Select language-specific prediction (with fallback to legacy format)
   const predictionData = React.useMemo(() => {
     if (!rawPredictionData) return null;
-    
+
     // Map i18next language code to prediction language code
     // i18next uses 'zh' for Chinese, but we need to handle both 'zh-*' variants
     const langMap: { [key: string]: 'en' | 'ar' | 'zh' } = {
@@ -54,9 +54,9 @@ export const StockCard: React.FC<StockCardProps> = ({ symbol, stock, compact = f
       'zh-CN': 'zh',
       'zh-TW': 'zh',
     };
-    
+
     const predictionLang = langMap[i18n.language] || 'en';
-    
+
     // If new multi-language format exists, use it
     if (rawPredictionData.predictions && rawPredictionData.predictions[predictionLang]) {
       const langPrediction = rawPredictionData.predictions[predictionLang];
@@ -66,7 +66,7 @@ export const StockCard: React.FC<StockCardProps> = ({ symbol, stock, compact = f
         displayLanguage: predictionLang
       };
     }
-    
+
     // Fallback: use English if selected language not available
     if (rawPredictionData.predictions && rawPredictionData.predictions.en) {
       const engPrediction = rawPredictionData.predictions.en;
@@ -76,7 +76,7 @@ export const StockCard: React.FC<StockCardProps> = ({ symbol, stock, compact = f
         displayLanguage: 'en'
       };
     }
-    
+
     // Otherwise, use legacy format (for backward compatibility)
     return rawPredictionData;
   }, [rawPredictionData, i18n.language]);
@@ -340,8 +340,8 @@ export const StockCard: React.FC<StockCardProps> = ({ symbol, stock, compact = f
                       <div className="text-xs text-gray-500 mb-2">
                         {
                           predictionData.displayLanguage === 'ar' ? 'العربية (Arabic)' :
-                          predictionData.displayLanguage === 'zh' ? '中文 (Chinese)' :
-                          'English'
+                            predictionData.displayLanguage === 'zh' ? '中文 (Chinese)' :
+                              'English'
                         }
                       </div>
                     )}

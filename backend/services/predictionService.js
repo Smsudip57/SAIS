@@ -123,35 +123,35 @@ Return ONLY this JSON structure (no markdown, no extra text):
         try {
             // Remove markdown code blocks if present
             let cleanedMessage = aiMessage.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-            
+
             // Try to extract JSON object from response
             let jsonMatch = cleanedMessage.match(/\{[\s\S]*\}/);
-            
+
             if (!jsonMatch) {
                 log.error(`❌ No JSON found in response. Raw response: ${aiMessage.substring(0, 200)}`);
                 throw new Error("No valid JSON found in response");
             }
-            
+
             const parsed = JSON.parse(jsonMatch[0]);
-            
+
             // Validate that all three languages are present
             if (!parsed.en || !parsed.ar || !parsed.zh) {
                 log.warn(`⚠️  Missing languages in response. Available: ${Object.keys(parsed).join(', ')}`);
             }
-            
+
             // Ensure all three languages are present with fallbacks
             predictions = {
                 en: parsed.en || { pred_pct: 0, confidence: 0, rationale: "No English prediction generated", evidence: [] },
                 ar: parsed.ar || { pred_pct: 0, confidence: 0, rationale: "لم يتم إنشاء توقع عربي", evidence: [] },
                 zh: parsed.zh || { pred_pct: 0, confidence: 0, rationale: "未生成中文预测", evidence: [] }
             };
-            
+
             log.log(`✅ Successfully parsed predictions for EN, AR, ZH`);
-            
+
         } catch (parseError) {
             log.error(`❌ JSON parsing error:`, parseError.message);
             log.error(`Response was: ${aiMessage.substring(0, 500)}`);
-            
+
             // Return empty predictions as fallback
             predictions = {
                 en: {
@@ -257,7 +257,7 @@ async function generateNewPrediction(symbol) {
     const prediction = predictions.en;
 
     log.log(`💾 Attempting to save prediction for ${upperSymbol} to database...`);
-    
+
     let predictionDoc;
     try {
         predictionDoc = await Prediction.findOneAndUpdate(
@@ -330,14 +330,14 @@ async function getOrCreatePrediction(symbol, index = 0) {
         // Fresh cache - return immediately without scheduling refresh
         if (latestPrediction && !isExpired) {
             log.log(`✅ Cache HIT for ${upperSymbol} (fresh, expires in ${Math.round((latestPrediction.updatedAt.getTime() + 6 * 60 * 60 * 1000 - now.getTime()) / 60000)} minutes)`);
-            
+
             // Normalize predictions for backward compatibility with old predictions
             const normalizedPredictions = latestPrediction.predictions || {
                 en: latestPrediction.prediction || {},
                 ar: latestPrediction.prediction || {},
                 zh: latestPrediction.prediction || {}
             };
-            
+
             return {
                 fromCache: true,
                 isFresh: true,
