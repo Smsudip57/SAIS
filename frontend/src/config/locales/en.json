@@ -312,5 +312,19 @@
     "network": "Network error. Please check your connection.",
     "unauthorized": "You are not authorized to perform this action.",
     "notFound": "Resource not found."
+  },
+  "predictionChatbot": {
+    "title": "AI Prediction Chat",
+    "placeholder": "Ask a follow-up question...",
+    "generating": "Generating AI prediction...",
+    "thinking": "AI is thinking...",
+    "sendButton": "Send",
+    "clearHistory": "Clear Chat",
+    "copyMessage": "Copy",
+    "copied": "Copied!",
+    "chatWithAI": "Chat with AI",
+    "initialMessage": "Here's my analysis of {{symbol}}:",
+    "errorLoading": "Failed to load prediction",
+    "errorSending": "Failed to send message"
   }
 }

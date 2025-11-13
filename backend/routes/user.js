@@ -915,4 +915,86 @@ router.get("/portfolio-history", async (req, res) => {
   }
 });
 
+// Prediction Chat Routes
+const {
+  answerPredictionQuestion,
+  getChatHistory,
+  saveChatMessage,
+} = require("../services/predictionChatService");
+
+// Get chat history for a symbol
+router.get("/predictions/chat/:symbol", async (req, res) => {
+  try {
+    const { symbol } = req.params;
+    const userId = req.user._id;
+
+    const history = await getChatHistory(userId, symbol);
+
+    res.status(200).json({
+      success: true,
+      symbol: symbol.toUpperCase(),
+      history,
+    });
+  } catch (error) {
+    console.error("Error fetching chat history:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch chat history",
+      error: error.message,
+    });
+  }
+});
+
+// Send chat question (also works via Socket.io)
+router.post("/predictions/chat", async (req, res) => {
+  try {
+    const { symbol, question, language = "en" } = req.body;
+    const userId = req.user._id;
+
+    if (!symbol || !question) {
+      return res.status(400).json({
+        success: false,
+        message: "Symbol and question are required",
+      });
+    }
+
+    // Save user question
+    await saveChatMessage(userId, symbol, "user", question, language);
+
+    // Get chat history for context
+    const history = await getChatHistory(userId, symbol, 10);
+
+    // Get AI response
+    const response = await answerPredictionQuestion(
+      symbol,
+      userId,
+      question,
+      language,
+      history
+    );
+
+    // Save AI response
+    await saveChatMessage(userId, symbol, "ai", response.text, language, response.tokens);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        symbol: symbol.toUpperCase(),
+        response: response.text,
+        sources: response.sources,
+        tokens: response.tokens,
+        language,
+        timestamp: new Date(),
+      },
+    });
+  } catch (error) {
+    console.error("Error processing chat question:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to process question",
+      error: error.message,
+    });
+  }
+});
+
 module.exports = router;

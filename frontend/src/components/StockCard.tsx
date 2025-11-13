@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Stock } from '@/lib/mockData';
-import { TrendingUp, TrendingDown, Brain, ChevronDown, ChevronUp, Info, Loader } from 'lucide-react';
+import { TrendingUp, TrendingDown, Brain, Loader, MessageSquare } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSharedStockStream } from '@/hooks/useSharedStockStream';
 import { useGetStocksPredictionsQuery } from '../../Redux/Api/tradingApi/Trading';
 import { useTranslation } from 'react-i18next';
 import { formatCurrency as formatCurrencyUtil } from '@/config/translations/formatters';
+import { PredictionChatbot } from './PredictionChatbot';
 
 interface StockCardProps {
   symbol?: string;
@@ -19,7 +19,7 @@ interface StockCardProps {
 }
 
 export const StockCard: React.FC<StockCardProps> = ({ symbol, stock, compact = false, onTrade }) => {
-  const [showReasoning, setShowReasoning] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
   const { t, i18n } = useTranslation();
 
   // Fetch predictions from API - only once when component mounts
@@ -324,46 +324,26 @@ export const StockCard: React.FC<StockCardProps> = ({ symbol, stock, compact = f
             </div>
 
             {!compact && predictionData?.prediction?.rationale && (
-              <Collapsible open={showReasoning} onOpenChange={setShowReasoning}>
-                <CollapsibleTrigger asChild>
-                  <Button variant="ghost" size="sm" className="w-full mt-2 p-0 h-auto text-xs">
-                    <div className="flex items-center space-x-1">
-                      <Info className="w-3 h-3" />
-                      <span>View AI Prediction Details</span>
-                      {showReasoning ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                    </div>
-                  </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="mt-2">
-                  <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg text-xs space-y-2">
-                    {predictionData.displayLanguage && (
-                      <div className="text-xs text-gray-500 mb-2">
-                        {
-                          predictionData.displayLanguage === 'ar' ? 'العربية (Arabic)' :
-                            predictionData.displayLanguage === 'zh' ? '中文 (Chinese)' :
-                              'English'
-                        }
-                      </div>
-                    )}
-                    <div>
-                      <p className="font-medium text-gray-900 dark:text-white mb-1">{t('stockCard.aiAnalysis')}:</p>
-                      <p className="text-gray-700 dark:text-gray-300">{predictionData?.prediction?.rationale || t('stockCard.noReasoning')}</p>
-                    </div>
-                    {/* {predictionData?.prediction?.evidence && Array.isArray(predictionData?.prediction?.evidence) && (
-                      <div>
-                        <p className="font-medium text-gray-900 dark:text-white mb-1">Key Evidence:</p>
-                        <ul className="list-disc list-inside space-y-1 text-gray-700 dark:text-gray-300">
-                          {predictionData?.prediction?.evidence?.map((item: any, idx: number) => (
-                            <li key={idx}>{item?.text || item?.signal || item?.type || 'Evidence point'}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )} */}
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full mt-2"
+                onClick={() => setChatOpen(true)}
+              >
+                <MessageSquare className="w-4 h-4 mr-2" />
+                {t('predictionChatbot.chatWithAI')}
+              </Button>
             )}
           </div>
+        )}
+
+        {/* Prediction Chatbot */}
+        {symbol && (
+          <PredictionChatbot
+            symbol={symbol}
+            open={chatOpen}
+            onOpenChange={setChatOpen}
+          />
         )}
 
         {onTrade && !compact && (

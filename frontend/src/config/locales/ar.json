@@ -312,5 +312,19 @@
     "network": "خطأ في الشبكة. يرجى التحقق من اتصالك.",
     "unauthorized": "ليس لديك تصريح لتنفيذ هذا الإجراء.",
     "notFound": "المورد غير موجود."
+  },
+  "predictionChatbot": {
+    "title": "دردشة توقع الذكاء الاصطناعي",
+    "placeholder": "اطرح سؤالاً متابعاً...",
+    "generating": "جاري إنشاء توقع الذكاء الاصطناعي...",
+    "thinking": "الذكاء الاصطناعي يفكر...",
+    "sendButton": "إرسال",
+    "clearHistory": "مسح الدردشة",
+    "copyMessage": "نسخ",
+    "copied": "تم النسخ!",
+    "chatWithAI": "الدردشة مع الذكاء الاصطناعي",
+    "initialMessage": "إليك تحليلي لـ {{symbol}}:",
+    "errorLoading": "فشل تحميل التوقع",
+    "errorSending": "فشل إرسال الرسالة"
   }
 }

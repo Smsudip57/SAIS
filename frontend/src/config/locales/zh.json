@@ -312,5 +312,19 @@
     "network": "网络错误。请检查您的连接。",
     "unauthorized": "您无权执行此操作。",
     "notFound": "未找到资源。"
+  },
+  "predictionChatbot": {
+    "title": "AI预测聊天",
+    "placeholder": "提出后续问题...",
+    "generating": "正在生成AI预测...",
+    "thinking": "AI正在思考...",
+    "sendButton": "发送",
+    "clearHistory": "清除聊天",
+    "copyMessage": "复制",
+    "copied": "已复制！",
+    "chatWithAI": "与AI聊天",
+    "initialMessage": "这是我对{{symbol}}的分析：",
+    "errorLoading": "加载预测失败",
+    "errorSending": "发送消息失败"
   }
 }
